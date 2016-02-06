@@ -1,0 +1,6 @@
+TARGET_NAME()
+
+ADD_LIBRARY("${TARGET_NAME}" STATIC trivial.h trivial.cpp )
+TARGET_LINK_LIBRARIES("${TARGET_NAME}" library-common)
+
+ADD_SUBDIRECTORY(test)
