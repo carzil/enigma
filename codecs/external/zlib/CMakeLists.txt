@@ -1,9 +1,8 @@
-ADD_SUBDIRECTORY(zlib-1_2_8)
+add_subdirectory(zlib-1_2_8)
 
-TARGET_NAME()
+TARGET_LIB(
+        SOURCES zlib.h zlib.cpp
+        LINK_DEPS zlibstatic
+)
 
-ADD_LIBRARY("${TARGET_NAME}" STATIC zlib.h zlib.cpp)
-
-TARGET_LINK_LIBRARIES("${TARGET_NAME}" zlibstatic)
-
-ADD_SUBDIRECTORY(test)
+add_subdirectory(test)

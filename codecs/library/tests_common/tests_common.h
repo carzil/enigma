@@ -5,6 +5,6 @@
 
 namespace Codecs {
 
-    void TestSimple(CodecIFace&);
+    void test_simple(CodecIFace&);
 
 }

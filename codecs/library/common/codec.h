@@ -29,6 +29,7 @@ namespace Codecs {
         CodecException& operator=(CodecException&& c) noexcept {
             descr = std::move(c.descr);
             (std::exception&)(*this) = std::move(c);
+            return *this;
         }
 
         explicit CodecException(const std::string& d)

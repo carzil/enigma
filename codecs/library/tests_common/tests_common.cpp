@@ -8,7 +8,7 @@ namespace Codecs {
             "aaaa", "bbbb", "cccc"
     };
 
-    void TestSimple(CodecIFace& c) {
+    void test_simple(CodecIFace& c) {
         c.reset();
         auto b = std::begin(TEST_SIMPLE_DATA);
         auto e = std::end(TEST_SIMPLE_DATA);
@@ -18,5 +18,4 @@ namespace Codecs {
         c.decode(data[1], data[0]);
         GTEST_ASSERT_EQ(std::string(TEST_SIMPLE_DATA[0]), data[1]);
     }
-
 }

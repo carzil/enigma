@@ -3,7 +3,7 @@
 
 TEST(ZlibNoDictCodecTest, Works) {
     Codecs::ZlibNoDictCodec codec;
-    Codecs::TestSimple(codec);
+    Codecs::test_simple(codec);
 };
 
 int main(int argc, char **argv) {

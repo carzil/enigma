@@ -1,12 +1,18 @@
-SET(gtest_build_tests OFF)
-ADD_SUBDIRECTORY(gtest-1_7_0)
+set(gtest_build_tests OFF)
+add_subdirectory(gtest-1_7_0)
 
 TARGET_NAME()
 
-ADD_LIBRARY("${TARGET_NAME}" STATIC gtest.h gtest.cpp)
-TARGET_LINK_LIBRARIES("${TARGET_NAME}" gtest)
-TARGET_INCLUDE_DIRECTORIES("${TARGET_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gtest-1_7_0/include")
+TARGET_LIB(NAME "${TARGET_NAME}"
+           SOURCES gtest.h gtest.cpp
+           LINK_DEPS gtest
+           )
 
-ADD_LIBRARY("${TARGET_NAME}_main" STATIC gtest.h gtest.cpp)
-TARGET_LINK_LIBRARIES("${TARGET_NAME}_main" gtest_main)
-TARGET_INCLUDE_DIRECTORIES("${TARGET_NAME}_main" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gtest-1_7_0/include")
+target_include_directories("${TARGET_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gtest-1_7_0/include")
+
+TARGET_LIB(NAME "${TARGET_NAME}_main"
+           SOURCES gtest.h gtest.cpp
+           LINK_DEPS gtest_main
+           )
+
+target_include_directories("${TARGET_NAME}_main" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gtest-1_7_0/include")

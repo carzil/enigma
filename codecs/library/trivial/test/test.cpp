@@ -2,8 +2,9 @@
 #include <library/tests_common/tests_common.h>
 
 TEST(TrivialCodecTest, Works) {
-    Codecs::TrivialCodec codec;
-    Codecs::TestSimple(codec);
+    using namespace Codecs;
+    TrivialCodec codec;
+    test_simple(codec);
 };
 
 int main(int argc, char **argv) {
