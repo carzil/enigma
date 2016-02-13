@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <functional>
 
 namespace Codecs {
 
@@ -18,7 +19,7 @@ namespace Codecs {
 
     using StringVector = vector<string>;
 
-    class CodecException : public std::exception, public std::ostringstream {
+    class CodecException : public std::exception {
         std::string descr;
     public:
         CodecException() = default;
@@ -40,6 +41,14 @@ namespace Codecs {
             return descr.c_str();
         }
     };
+
+#if defined(cthrow)
+    #error "already defined"
+#else
+    #define cthrow(what) do { std::ostringstream s; s << "at " << __FILE__ << ":" << __LINE__ << " " << what; \
+        throw CodecException(s.str()); \
+    } while (false)
+#endif
 
     class CodecIFace {
     public:

@@ -9,7 +9,7 @@ namespace Codecs {
         size_t raw_size = raw.size();
 
         while (raw_size) {
-            encoded.push_back((char)((raw_size > 0x7F) | (raw_size & 0x7F)));
+            encoded.push_back((char)((raw_size > 0x7F ? 0x80 : 0) | (raw_size & 0x7F)));
             raw_size >>= 7;
         }
 
@@ -18,9 +18,10 @@ namespace Codecs {
         encoded.resize(old_res_size + res_size_max);
         uLongf destLen = 0;
 
-        if (Z_OK != compress((Bytef*)&*(encoded.begin() + old_res_size), &destLen,
-                             (const Bytef*)&*raw.begin(), raw.size())) {
-            throw CodecException("badly encoded");
+        int res = compress((Bytef*)&*(encoded.begin() + old_res_size), &destLen, (const Bytef *) &*raw.begin(), raw.size());
+
+        if (Z_OK != res) {
+            cthrow("badly encoded: res=" << res);
         }
 
         encoded.resize(destLen + old_res_size);
@@ -29,13 +30,13 @@ namespace Codecs {
     void ZlibNoDictCodec::decode(string& raw, const string_view& encoded) const {
         raw.clear();
         size_t res_size_max = 0;
-        size_t enc_off = 0;
-        size_t enc_size = encoded.size();
-        while (enc_off < enc_size) {
+        const char* enc_beg = encoded.cbegin();
+        const char* enc_end = encoded.cend();
+        while (enc_beg < enc_end) {
             res_size_max <<= 7;
-            char c = encoded[enc_off];
-            res_size_max |= c & 0x7F;
-            enc_off++;
+            char c = *enc_beg;
+            res_size_max |= (c & 0x7F);
+            enc_beg++;
             if (!(c & 0x80)) {
                 break;
             }
@@ -45,7 +46,7 @@ namespace Codecs {
         uLongf destLen = 0;
 
         if (Z_OK != uncompress((Bytef*)&*(raw.begin()), &destLen,
-                               (const Bytef*)&*(encoded.begin() + enc_off), encoded.size() - enc_off) || destLen != res_size_max) {
+                               (const Bytef*)enc_beg, enc_end - enc_beg) || destLen != res_size_max) {
             throw CodecException("badly decoded");
         }
     }

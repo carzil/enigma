@@ -1,12 +1,13 @@
 include(CMakeParseArguments)
 
 function(PATH_TO_NAME path)
-    string(REPLACE "${CMAKE_SOURCE_DIR}/codecs/" "" path "${path}")
+    string(REPLACE "${PROJECT_SOURCE_DIR}" "" path "${path}")
     if(UNIX)
-        string(REPLACE "/" "-" result "${path}")
+        string(REGEX REPLACE "/" "-" result "${path}")
     else()
         string(REPLACE "\\" "-" result "${path}")
     endif()
+    string(REGEX REPLACE "^-" "" result "${result}")
     set(_RESULT "${result}" PARENT_SCOPE)
 endfunction()
 
