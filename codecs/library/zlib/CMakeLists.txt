@@ -1,6 +1,6 @@
-TARGET_NAME()
+TARGET_LIB(
+    SOURCES zlib.h zlib.cpp
+    LINK_DEPS external-zlib
+)
 
-ADD_LIBRARY("${TARGET_NAME}" STATIC zlib.h zlib.cpp)
-TARGET_LINK_LIBRARIES("${TARGET_NAME}" library-common external-zlib)
-
-ADD_SUBDIRECTORY(test)
+add_subdirectory(test)
