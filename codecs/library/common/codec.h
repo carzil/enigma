@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sample.h"
 
 #include <experimental/algorithm>
 #include <experimental/string_view>
@@ -10,6 +9,9 @@
 #include <vector>
 #include <sstream>
 #include <functional>
+
+#include "sample.h"
+#include "library/common/bit/bitstream.h"
 
 namespace Codecs {
 
@@ -52,14 +54,16 @@ namespace Codecs {
 
     class CodecIFace {
     public:
-        virtual void encode(string& encoded, const string_view& raw) const = 0;
-        virtual void decode(string& raw, const string_view& encoded) const = 0;
+        virtual void encodeChunk(obitstream& encoded, const string_view& raw) const = 0;
+        virtual void stopEncoding(obitstream& encoded) const = 0;
+        virtual void decode(string& raw, ibitstream& encoded) const = 0;
 
         virtual string save() const = 0;
         virtual void load(const string_view&) = 0;
 
         virtual size_t sample_size(size_t records_total) const = 0;
         virtual void learn(const StringViewVector& all_samples) = 0;
+        virtual void learn(const string_view& sample) = 0;
 
         virtual void reset() = 0;
 
