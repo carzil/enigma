@@ -54,9 +54,8 @@ namespace Codecs {
 
     class CodecIFace {
     public:
-        virtual void encodeChunk(obitstream& encoded, const string_view& raw) const = 0;
-        virtual void stopEncoding(obitstream& encoded) const = 0;
-        virtual void decode(string& raw, ibitstream& encoded) const = 0;
+        virtual void encode(string& encoded, string& raw) const = 0;
+        virtual void decode(string& result, string& raw) const = 0;
 
         virtual string save() const = 0;
         virtual void load(const string_view&) = 0;

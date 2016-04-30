@@ -59,50 +59,35 @@ int main(int argc, char **argv) {
     // }
     Codecs::HuffmanCodec codec;
     std::string fname = argv[1];
-    std::ifstream ifs("data/" + fname);
+    std::vector<std::string> v;
+    std::ifstream ifs(fname);
     // std::string content;
     clock_t begin, end;
     double elapsed_secs;
     begin = clock();
-    char* buf = new char[4096];
     while (!ifs.eof()) {
-        ifs.read(buf, 4096);
-        size_t readed = -1;
-        if (ifs) {
-            readed = 4096;
-        } else {
-            readed = ifs.gcount();
-        }
-        std::experimental::string_view view(buf, readed);
-        codec.learn(view);
+        std::string line;
+        getline(ifs, line);
+        v.push_back(line);
     }
     end = clock();
     elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
     std::cout << "reading done in " << elapsed_secs << " secs" << std::endl;
-    std::ofstream ofs("data/" + fname + ".cpd");
-    Codecs::obitstream bs(ofs);
+    std::vector<std::string> encoded;
     begin = clock();
     size_t file_size = 0, compressed_size = 0;
-    ifs.clear();
-    ifs.seekg(0, std::ios::beg);
-    while (!ifs.eof()) {
-        ifs.read(buf, 4096);
-        size_t readed = -1;
-        if (ifs) {
-            readed = 4096;
-        } else {
-            readed = ifs.gcount();
-        }
-        // std::cout << "readed = " << readed << std::endl;
-        file_size += readed;
-        std::experimental::string_view view(buf, readed);
-        codec.encodeChunk(bs, view);
+    for (std::string str : v) {
+        codec.learn(std::experimental::string_view(str));
     }
-    codec.stopEncoding(bs);
+
+    for (std::string str : v) {
+        std::string encoded_line;
+        codec.encode(encoded_line, str);
+        encoded.push_back(encoded_line);
+    }
     end = clock();
-    bs.flush();
-    bs.dump();
-    ofs.close();
+
+    std::cout << encoded.size() << " " << v.size() << std::endl;
 
     elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
     std::cout << "compression done in " << elapsed_secs << " secs" << std::endl;
@@ -110,22 +95,16 @@ int main(int argc, char **argv) {
     std::cout << "compressed memory: " << int(1.0 * compressed_size / 1024 / 1024) << " MBytes" << std::endl;
     std::cout << "saved memory: " << int(1.0 * (file_size - compressed_size) / 1024 / 1024) << " MBytes" << std::endl;
 
-    std::ifstream w("data/" + fname + ".cpd");
-    std::ofstream fout("data/" + fname + "_unpacked");
-    // Codecs::obitstream streamu(fout);
-    Codecs::ibitstream stream(w);
-    // stream.dump();
-    std::string decoded;
-    // for (int i = 0; i < 2000; i++) {
-    //     std::cout << stream.getBit();
-    // }
-    // std::cout << std::endl;
+    std::ofstream fout(fname + "_unpacked");
     begin = clock();
-    codec.decode(decoded, stream);
-    // streamu.flush();
+    for (std::string str : encoded) {
+        std::string decoded_line;
+        codec.decode(str, decoded_line);
+        fout << decoded_line << std::endl;
+    }
     end = clock();
+
     elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
     std::cout << "decompression done in " << elapsed_secs << " secs" << std::endl;
-    fout << decoded;
     return 0;
 }

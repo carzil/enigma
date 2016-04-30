@@ -11,7 +11,7 @@ namespace Codecs {
 
     }
 
-    int bitwriter::writeBit(bool bit) {
+    void bitwriter::writeBit(bool bit) {
         fixCharPosition();
         if (bit) {
             current_char |= 1 << char_pos;
@@ -21,7 +21,7 @@ namespace Codecs {
         char_pos--;
     }
 
-    int bitwriter::writeBits(unsigned char bits, int nbits) {
+    void bitwriter::writeBits(unsigned char bits, int nbits) {
         fixCharPosition();
         bits &= (~0 << (8 - nbits));
         if (char_pos == 7) {

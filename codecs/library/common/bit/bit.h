@@ -4,8 +4,8 @@ namespace Codecs {
 
     class bitwriter {
         protected:
-            unsigned char current_char;
             int char_pos;
+            unsigned char current_char;
 
             void fixCharPosition();
             virtual void appendChar(char c) = 0;
@@ -14,15 +14,15 @@ namespace Codecs {
             bitwriter();
             bitwriter(unsigned char, int);
 
-            int writeBit(bool bit);
-            int writeBits(unsigned char bits, int nbits = 8);
+            void writeBit(bool bit);
+            void writeBits(unsigned char bits, int nbits = 8);
             virtual void flush();
     };
 
     class bitreader {
         protected:
-            unsigned char current_char;
             int char_pos;
+            unsigned char current_char;
 
         public:
             bitreader();

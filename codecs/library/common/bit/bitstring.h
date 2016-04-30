@@ -36,7 +36,7 @@ const unsigned char BIT_REVERSE[] = {
 };
 
 namespace Codecs {
-    class Bitstring : public bitwriter {
+    class bitstring : public bitwriter {
         private:
             std::string* str;
             size_t string_pos;
@@ -45,9 +45,9 @@ namespace Codecs {
             virtual void appendChar(char c) override;
 
         public:
-            Bitstring();
-            Bitstring(std::string* str);
-            Bitstring(std::string* str, unsigned char current_char, int char_pos, int string_pos);
+            bitstring();
+            bitstring(std::string* str);
+            bitstring(std::string* str, unsigned char current_char, int char_pos, int string_pos);
 
             // void writeBit(bool bit);
             // void writeChar(unsigned char c, int n = 8);
@@ -56,11 +56,12 @@ namespace Codecs {
             // char readChar();
 
             // virtual void flush() override;
+            bool getBit();
             void write(obitstream& stream);
             void revert();
             void reset();
-            Bitstring* clone();
-            void merge(Bitstring other);
+            bitstring* clone();
+            void merge(bitstring other);
             std::string format();
             size_t sizeInBits();
     };

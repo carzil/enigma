@@ -24,9 +24,9 @@ namespace Codecs {
         private:
             HuffmanNode* root;
             vector<size_t> frequencies; // chars + EOF
-            vector<Codecs::Bitstring*> char_table;
+            vector<Codecs::bitstring*> char_table;
 
-            void GenerateCodes(HuffmanNode* node, Codecs::Bitstring* bs, int depth = 0);
+            void GenerateCodes(HuffmanNode* node, Codecs::bitstring* bs, int depth = 0);
 
         public:
             HuffmanTree();
@@ -37,9 +37,9 @@ namespace Codecs {
             void BuildTree();
             void EnsureBuilt();
 
-            Bitstring* Encode(char c);
-            Bitstring* EncodeEOF();
-            int Decode(ibitstream& stream);
+            bitstring* Encode(char c);
+            bitstring* EncodeEOF();
+            int Decode(bitstring& stream);
             bool IsEOFCodeword(int codeword);
     };
 
@@ -50,9 +50,8 @@ namespace Codecs {
         public:
             HuffmanCodec();
 
-            virtual void encodeChunk(obitstream& encoded, const string_view& raw) const override;
-            virtual void stopEncoding(obitstream& encoded) const override;
-            virtual void decode(string& raw, ibitstream& encoded) const override;
+            virtual void encode(string& encoded, string& raw) const override;
+            virtual void decode(string& encoded, string& raw) const override;
 
             virtual string save() const override;
             virtual void load(const string_view&) override;

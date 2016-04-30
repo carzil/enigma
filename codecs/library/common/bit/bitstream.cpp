@@ -34,8 +34,8 @@ namespace Codecs {
     }
 
     inline void obitstream::putBits(unsigned int bits, size_t byte_offset) {
-        std::cout << "bit_pos = " <<  bit_pos << ", byte offset = " << byte_offset << ", bits = " << (bits << (bit_pos & 0xf));
-        std::cout << ", bits_raw = " << bits << std::endl;
+        // std::cout << "bit_pos = " <<  bit_pos << ", byte offset = " << byte_offset << ", bits = " << (bits << (bit_pos & 0xf));
+        // std::cout << ", bits_raw = " << bits << std::endl;
         byte_offset &= ~1;
         *(unsigned int*)(buffer + byte_offset) |= bits << (bit_pos & 0xf);
         // dump();
@@ -89,7 +89,7 @@ namespace Codecs {
         if (bit_pos + nbits >= BUFFER_SIZE * 8) {
             unsigned int result = 0;
             size_t cnt = BUFFER_SIZE * 8 - bit_pos;
-            std::cout << "cnt = " << cnt << std::endl;
+            // std::cout << "cnt = " << cnt << std::endl;
             result = getBitsNoCheck(cnt) << cnt;
             renewBuffer();
             bit_pos = 0;
