@@ -45,7 +45,7 @@ namespace Codecs {
 
         if (node->left == nullptr && node->right == nullptr) {
             char_table[node->c] = bs->clone();
-            std::cout << "code for '" << (char)node->c << "' (" << node->c << ") is " << char_table[node->c]->format();
+            std::cout << "code for '" << (unsigned char)node->c << "' (" << node->c << ") is " << char_table[node->c]->format();
             std::cout << " (size = " << bs->sizeInBits() << "), depth is " << depth << std::endl;
             // std::cout << char_table[node->c]->format() << std::endl;
         }
@@ -58,7 +58,7 @@ namespace Codecs {
 
     void HuffmanTree::LearnOnString(const string_view& str) {
         for (size_t i = 0; i < str.size(); i++) {
-            frequencies[str[i]] += 1;
+            frequencies[static_cast<unsigned char>(str[i])]++;
         }
     }
 
@@ -88,7 +88,7 @@ namespace Codecs {
         root = queue.top();
     }
 
-    bitstring* HuffmanTree::Encode(char c) {
+    bitstring* HuffmanTree::Encode(unsigned char c) {
         return char_table[c];
     }
 
@@ -126,7 +126,7 @@ namespace Codecs {
         tree = new HuffmanTree();
     }
 
-    void HuffmanCodec::learn(const StringViewVector& vec) {
+    void HuffmanCodec::learn(const vector<string>& vec) {
         for (const string_view& str : vec) {
             tree->LearnOnString(str);
         }
@@ -150,11 +150,12 @@ namespace Codecs {
     }
 
     void HuffmanCodec::decode(string& result, string& raw) const {
+        tree->EnsureBuilt();
         bitstring encoded(&result);
         int codeword = tree->Decode(encoded);
         raw.reserve(100);
         while (!tree->IsEOFCodeword(codeword)) {
-            raw.push_back(static_cast<char>(codeword));
+            raw.push_back(static_cast<unsigned char>(codeword));
             codeword = tree->Decode(encoded);
         }
         raw.shrink_to_fit();

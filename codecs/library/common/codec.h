@@ -61,8 +61,8 @@ namespace Codecs {
         virtual void load(const string_view&) = 0;
 
         virtual size_t sample_size(size_t records_total) const = 0;
-        virtual void learn(const StringViewVector& all_samples) = 0;
-        virtual void learn(const string_view& sample) = 0;
+        virtual void learn(const vector<string>& all_samples) = 0;
+        virtual void learn(const string_view& view) = 0;
 
         virtual void reset() = 0;
 
@@ -73,7 +73,7 @@ namespace Codecs {
             StringViewVector vec;
             codec.reset();
             select_sample(vec, begin, end, codec.sample_size(pop_size));
-            codec.learn(vec);
+            // codec.learn(vec);
         }
     };
 

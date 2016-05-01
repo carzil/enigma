@@ -37,7 +37,7 @@ namespace Codecs {
             void BuildTree();
             void EnsureBuilt();
 
-            bitstring* Encode(char c);
+            bitstring* Encode(unsigned char c);
             bitstring* EncodeEOF();
             int Decode(bitstring& stream);
             bool IsEOFCodeword(int codeword);
@@ -57,7 +57,7 @@ namespace Codecs {
             virtual void load(const string_view&) override;
 
             virtual size_t sample_size(size_t records_total) const override;
-            virtual void learn(const StringViewVector& all_samples) override;
+            virtual void learn(const vector<string>& all_samples) override;
             virtual void learn(const string_view& view) override;
 
             virtual void reset() override;
