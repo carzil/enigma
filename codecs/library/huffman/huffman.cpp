@@ -3,6 +3,8 @@
 #include <string>
 #include <queue>
 #include <vector>
+#include <cstring>
+#include "library/common/bit/bitstream.h"
 #include "huffman.h"
 
 
@@ -20,7 +22,19 @@ namespace Codecs {
     HuffmanNode::HuffmanNode(int c, size_t frequency) : left(nullptr), right(nullptr), c(c), frequency(frequency) {
         // std::cout << "created node c=" << c << ", frequency=" << frequency << std::endl;
     }
-    HuffmanTree::HuffmanTree() : root(nullptr), frequencies(256 + 1), char_table(256 + 1) {
+    HuffmanTree::HuffmanTree() : root(nullptr) {
+        frequencies = new size_t[256 + 2];
+        memset(frequencies, 0, sizeof(size_t) * (256 + 2));
+        for (size_t i = 0; i <= 8; i++) {
+            char_table[i] = new Codeword*[256 + 2];
+        }
+    }
+
+    HuffmanTree::~HuffmanTree() {
+        delete[] frequencies;
+        for (size_t i = 0; i <= 8; i++) {
+            delete[] char_table[i];
+        }
     }
 
     void pr(std::vector<char>& v, size_t pos) {
@@ -30,33 +44,35 @@ namespace Codecs {
         }
     }
 
-    void HuffmanTree::GenerateCodes(HuffmanNode* node, bitstring* bs, int depth) {
+    void HuffmanTree::GenerateCodes(HuffmanNode* node, vector<bool>& bits, size_t depth) {
         // std::cout << pos << std::endl;
         if (node == nullptr) {
             return;
         }
-        bs->writeBit(0);
-        GenerateCodes(node->left, bs, depth + 1);
-        bs->revert();
 
-        bs->writeBit(1);
-        GenerateCodes(node->right, bs, depth + 1);
-        bs->revert();
+        bits.push_back(0);
+        GenerateCodes(node->left, bits, depth + 1);
+        bits.back() = 1;
+        GenerateCodes(node->right, bits, depth + 1);
+        bits.resize(bits.size() - 1);
 
         if (node->left == nullptr && node->right == nullptr) {
-            char_table[node->c] = bs->clone();
-            std::cout << "code for '" << (unsigned char)node->c << "' (" << node->c << ") is " << char_table[node->c]->format();
-            std::cout << " (size = " << bs->sizeInBits() << "), depth is " << depth << std::endl;
-            // std::cout << char_table[node->c]->format() << std::endl;
+            for (size_t bitOffset = 0; bitOffset <= 8; bitOffset++) {
+                Codeword* cw = new Codeword(bits, bitOffset);
+                char_table[bitOffset][node->c] = cw;
+            }
+            std::cout << "code for '" << (char)node->c << "' (";
+            std::cout << node->c << ") is " << *char_table[0][node->c] << ", depth = " << depth << std::endl;
+            // std::cout << "======" << std::endl;
         }
     }
 
     void HuffmanTree::GenerateCodes() {
-        string* s = new string();
-        GenerateCodes(root, new bitstring(s));
+        vector<bool> bits;
+        GenerateCodes(root, bits, 0);
     }
 
-    void HuffmanTree::LearnOnString(const string_view& str) {
+    void HuffmanTree::LearnOnString(const string& str) {
         for (size_t i = 0; i < str.size(); i++) {
             frequencies[static_cast<unsigned char>(str[i])]++;
         }
@@ -65,8 +81,10 @@ namespace Codecs {
     void HuffmanTree::BuildTree() {
         std::priority_queue<HuffmanNode*, std::vector<HuffmanNode*>, HuffmanComparator> queue;
 
-        for (size_t i = 0; i < 257; i++) {
-            if (i == 256 || frequencies[i] > 0) {
+        queue.push(new HuffmanNode(256, 1));
+
+        for (size_t i = 0; i < 256; i++) {
+            if (frequencies[i] > 0) {
                 queue.push(new HuffmanNode(i, frequencies[i]));
             }
         }
@@ -88,77 +106,135 @@ namespace Codecs {
         root = queue.top();
     }
 
-    bitstring* HuffmanTree::Encode(unsigned char c) {
-        return char_table[c];
-    }
-
-    bitstring* HuffmanTree::EncodeEOF() {
-        return char_table[256];
-    }
-
-    bool HuffmanTree::IsEOFCodeword(int codeword) {
-        return codeword == 256;
-    }
-
-    void HuffmanTree::EnsureBuilt() {
+    void HuffmanTree::Build() {
+        std::cout << "frequencies map: ";
+        for (size_t i = 0; i < 256; i++) {
+            std::cout << frequencies[i] << " ";
+        }
+        std::cout << std::endl;
         if (root == nullptr) {
+            clock_t begin = clock();
             BuildTree();
             GenerateCodes();
+            clock_t end = clock();
+            double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+            std::cout << "tree builded in " << elapsed_secs << " secs" << std::endl;
         }
     }
 
-    int HuffmanTree::Decode(bitstring& stream) {
-        HuffmanNode* current_node = root;
-        while (!(current_node->left == nullptr && current_node->right == nullptr)) {
-            bool bit = stream.getBit();
-            // std::cout << bit;
-            if (bit) {
-                current_node = current_node->right;
-            } else {
-                current_node = current_node->left;
-            }
-        }
-        // std::cout << "|";
-        return current_node->c;
-    }
+    // int HuffmanTree::Decode(bitstring& stream) {
+    //     HuffmanNode* current_node = root;
+    //     while (!(current_node->left == nullptr && current_node->right == nullptr)) {
+    //         bool bit = stream.getBit();
+    //         // std::cout << bit;
+    //         if (bit) {
+    //             current_node = current_node->right;
+    //         } else {
+    //             current_node = current_node->left;
+    //         }
+    //     }
+    //     // std::cout << "|";
+    //     if (current_node->c == 257) {
+    //         // std::cout << "found ESC" << std::endl;
+    //         return stream.getChar();
+    //     } else {
+    //         return current_node->c;
+    //     }
+    // }
 
     HuffmanCodec::HuffmanCodec() {
         tree = new HuffmanTree();
     }
 
     void HuffmanCodec::learn(const vector<string>& vec) {
-        for (const string_view& str : vec) {
+        clock_t begin = clock();
+        for (const string& str : vec) {
             tree->LearnOnString(str);
         }
+        clock_t end = clock();
+        double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+        std::cout << "learning done in " << elapsed_secs << " secs" << std::endl;
+        tree->Build();
     }
 
-    void HuffmanCodec::learn(const string_view& view) {
-        tree->LearnOnString(view);
-    }
-
-    void HuffmanCodec::encode(string& result, string& raw) const {
-        tree->EnsureBuilt();
-        bitstring encoded(&result);
-        for (size_t i = 0; i < raw.size(); i++) {
-            bitstring* codeword = tree->Encode(raw[i]);
-            // std::cout << "merging codeword " << codeword->format() << " (" << raw[i] << ")" << std::endl;
-            encoded.merge(*codeword);
+    void HuffmanCodec::encode(const string_view& raw, string& encoded) const {
+        encoded.reserve(2 * raw.size());
+        // char* encoded = new char[2 * raw.size()];
+        // char* ptr = encoded;
+        uint8_t bitContainer = 0;
+        size_t bitOffset = 0;
+        for (size_t i = 0; i < raw.size() + 1; i++) {
+            unsigned int ch;
+            if (i != raw.size()) {
+                ch = raw[i];
+            } else {
+                ch = 256;
+            }
+            Codeword* cw = tree->char_table[bitOffset][ch];
+            // std::cout << "merging codeword " << ch << " = " << *tree->char_table[0][ch] << ", offset is " << bitOffset << std::endl;
+            bitContainer |= cw->packedBits[0];
+            if (cw->size > 1) {
+                // *ptr = bitContainer;
+                // ptr++;
+                encoded.push_back(bitContainer);
+                for (size_t j = 1; j < cw->size - 1; j++) {
+                    encoded.push_back(cw->packedBits[i]);
+                }
+                // memcpy(ptr, cw->packedBits, (cw->size - 1) * sizeof(uint8_t));
+                // ptr += cw->size - 2;
+                bitContainer = cw->packedBits[cw->size - 1];
+            }
+            bitOffset = cw->lastBitsCount;
         }
-        encoded.merge(*tree->EncodeEOF());
-        // std::cout << encoded.format() << std::endl;
-        encoded.flush();
+        if (bitOffset > 0) {
+            // *ptr = bitContainer;
+            // ptr++;
+            encoded.push_back(bitContainer);
+        }
+
+        // for (char c : encoded) {
+        //     int bitPos = 7;
+        //     while (bitPos >= 0) {
+        //         bool bit = c & (1 << bitPos);
+        //         std::cout << bit;
+        //         bitPos--;
+        //     }
+        // }
+        // std::cout << std::endl;
+        // return string_view(encoded, ptr - encoded);
     }
 
-    void HuffmanCodec::decode(string& result, string& raw) const {
-        tree->EnsureBuilt();
-        bitstring encoded(&result);
-        int codeword = tree->Decode(encoded);
-        raw.reserve(100);
-        while (!tree->IsEOFCodeword(codeword)) {
-            raw.push_back(static_cast<unsigned char>(codeword));
-            codeword = tree->Decode(encoded);
+    void HuffmanCodec::decode(const string_view& raw, string& result) const {
+        result.reserve(2 * raw.size());
+        int bitPos = 7;
+        size_t pos = 0;
+        uint8_t bitContainer = raw[0];
+        HuffmanNode* ptr = tree->root;
+        bool decoding = true;
+        while (decoding) {
+            while (!(ptr->left == nullptr && ptr->right == nullptr)) {
+                if (bitPos == -1) {
+                    pos++;
+                    bitContainer = raw[pos];
+                    bitPos = 7;
+                }
+                bool bit = bitContainer & (1 << bitPos);
+                bitPos--;
+                // std::cout << bit;
+                if (bit) {
+                    ptr = ptr->right;
+                } else {
+                    ptr = ptr->left;
+                }
+            }
+            if (ptr->c == 256) {
+                decoding = false;
+            } else {
+                result.push_back(ptr->c);
+            }
+            ptr = tree->root;
         }
-        raw.shrink_to_fit();
+        // std::cout << std::endl;
     }
 
     string HuffmanCodec::save() const {

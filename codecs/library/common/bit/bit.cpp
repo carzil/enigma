@@ -25,7 +25,7 @@ namespace Codecs {
         fixCharPosition();
         bits &= (~0 << (8 - nbits));
         if (char_pos == 7) {
-            current_char = bits;
+            current_char = BIT_REVERSE[bits];
             char_pos = 7 - nbits;
         } else {
             int len = std::min(char_pos + 1, nbits);

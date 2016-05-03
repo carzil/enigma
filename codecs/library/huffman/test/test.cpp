@@ -3,7 +3,6 @@
 #include <vector>
 #include <library/huffman/huffman.h>
 #include <library/tests_common/tests_common.h>
-#include <library/common/bit/bitstring.h>
 #include <library/common/bit/bitstream.h>
 
 TEST(TrivialCodecTest, Works) {
@@ -60,12 +59,14 @@ int main(int argc, char **argv) {
     Codecs::HuffmanCodec codec;
     std::string fname = argv[1];
     std::vector<std::string> v;
+    std::vector<std::string> encoded;
     std::vector<std::experimental::string_view> vv;
-    std::ifstream ifs(fname);
-    // std::string content;
     clock_t begin, end;
     double elapsed_secs;
     begin = clock();
+
+    std::ifstream ifs(fname);
+    // std::string content;
 
     std::string line;
 
@@ -73,37 +74,42 @@ int main(int argc, char **argv) {
         v.push_back(line);
     }
 
-    end = clock();
-    elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-    std::cout << "reading done in " << elapsed_secs << " secs" << std::endl;
-    std::vector<std::string> encoded;
-    begin = clock();
-    size_t file_size = 0, compressed_size = 0;
+    encoded.resize(v.size());
 
-    codec.learn(v);
-
-    for (std::string str : v) {
-        std::string encoded_line;
-        codec.encode(encoded_line, str);
-        encoded.push_back(encoded_line);
+    for (size_t i = 0; i < v.size(); i++) {
+        vv.push_back(std::experimental::string_view(v[i]));
     }
 
     end = clock();
+    elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+    std::cout << "reading done in " << elapsed_secs << " secs" << std::endl;
+    int file_size = 0, compressed_size = 0;
+    elapsed_secs = 0;
 
-    std::cout << encoded.size() << " " << v.size() << std::endl;
+    codec.learn(v);
+
+    begin = clock();
+    for (size_t i = 0; i < v.size(); i++) {
+        codec.encode(vv[i], encoded[i]);
+        compressed_size += encoded[i].size();
+        file_size += vv[i].size();
+    }
+    end = clock();
 
     elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+
     std::cout << "compression done in " << elapsed_secs << " secs" << std::endl;
-    std::cout << "uncompressed memory: " << int(1.0 * file_size / 1024 / 1024) << " MBytes" << std::endl;
-    std::cout << "compressed memory: " << int(1.0 * compressed_size / 1024 / 1024) << " MBytes" << std::endl;
-    std::cout << "saved memory: " << int(1.0 * (file_size - compressed_size) / 1024 / 1024) << " MBytes" << std::endl;
+    std::cout << "uncompressed memory: " << file_size << " Bytes (" << file_size / 1024 / 1024 <<  " MBytes)" << std::endl;
+    std::cout << "compressed memory: " << compressed_size << " Bytes (" << compressed_size / 1024 / 1024 << " MBytes)" << std::endl;
+    std::cout << "saved memory: " << (file_size - compressed_size) << " Bytes (" << (file_size - compressed_size) / 1024 / 1024 << " MBytes)" << std::endl;
+    std::cout << "compression ratio ~ " << std::fixed << std::setprecision(3) << 100 - 100.0 * compressed_size / file_size << "%" << std::endl;
 
     std::ofstream fout(fname + "_unpacked");
     begin = clock();
-    for (std::string str : encoded) {
-        std::string decoded_line;
-        codec.decode(str, decoded_line);
-        fout << decoded_line << std::endl;
+    for (std::string& str : encoded) {
+        std::string decoded;
+        codec.decode(str, decoded);
+        fout << decoded << std::endl;
     }
     end = clock();
 
