@@ -14,6 +14,7 @@ struct HuffmanNode {
     HuffmanNode();
     HuffmanNode(int c, size_t frequency);
     HuffmanNode(HuffmanNode* left, HuffmanNode* right, size_t frequency);
+    ~HuffmanNode();
 
     bool operator<(const HuffmanNode& other);
 };
@@ -23,7 +24,6 @@ class HuffmanTree {
         size_t* frequencies; // chars + EOF
 
         void BuildTree();
-        void DeleteTree(HuffmanNode* node);
 
     public:
         HuffmanNode* root;
@@ -32,7 +32,7 @@ class HuffmanTree {
 
         void LearnOnString(const std::string&);
         void Build();
-        void DeleteTree();
+        void Reset();
 };
 
 }

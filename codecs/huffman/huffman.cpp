@@ -102,8 +102,12 @@ HuffmanCodec::HuffmanCodec() {
 }
 
 HuffmanCodec::~HuffmanCodec() {
-    delete tree;
-    delete prefix_table;
+    if (tree != nullptr) {
+        delete tree;
+    }
+    if (prefix_table != nullptr) {
+        delete prefix_table;
+    }
     for (size_t i = 0; i <= 8; i++) {
         for (size_t j = 0; j < 256 + 2; j++) {
             if (char_table[i][j] != nullptr) {
@@ -225,15 +229,21 @@ size_t HuffmanCodec::sample_size(size_t total) const {
 
 void HuffmanCodec::reset() {
     if (tree != nullptr) {
-        tree->DeleteTree();
-        for (size_t i = 0; i <= 8; i++) {
-            for (size_t j = 0; j < 256 + 2; j++) {
-                if (char_table[i][j] != nullptr) {
-                    delete char_table[i][j];
-                    char_table[i][j] = nullptr;
-                }
+        tree->Reset();
+    }
+
+    for (size_t i = 0; i <= 8; i++) {
+        for (size_t j = 0; j < 256 + 2; j++) {
+            if (char_table[i][j] != nullptr) {
+                delete char_table[i][j];
+                char_table[i][j] = nullptr;
             }
         }
+    }
+
+    if (prefix_table != nullptr) {
+        delete prefix_table;
+        prefix_table = new PrefixTable();
     }
 }
 

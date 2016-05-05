@@ -15,16 +15,25 @@ class HuffmanComparator {
 
 HuffmanNode::HuffmanNode() : left(nullptr), right(nullptr), frequency(0) {}
 HuffmanNode::HuffmanNode(HuffmanNode* left, HuffmanNode* right, size_t frequency) : left(left), right(right), frequency(frequency) {}
-HuffmanNode::HuffmanNode(int c, size_t frequency) : left(nullptr), right(nullptr), c(c), frequency(frequency) {
-    // std::cout << "created node c=" << c << ", frequency=" << frequency << std::endl;
+HuffmanNode::HuffmanNode(int c, size_t frequency) : left(nullptr), right(nullptr), c(c), frequency(frequency) {}
+
+HuffmanNode::~HuffmanNode() {
+    if (left != nullptr) {
+        delete left;
+    }
+
+    if (right != nullptr) {
+        delete right;
+    }
 }
+
 HuffmanTree::HuffmanTree() : root(nullptr) {
     frequencies = new size_t[256 + 2];
     memset(frequencies, 0, sizeof(size_t) * (256 + 2));
 }
 
 HuffmanTree::~HuffmanTree() {
-    DeleteTree();
+    delete root;
     delete[] frequencies;
 }
 
@@ -73,18 +82,8 @@ void HuffmanTree::Build() {
     }
 }
 
-void HuffmanTree::DeleteTree(HuffmanNode* node) {
-    if (node->left == nullptr && node->right == nullptr) {
-        delete node;
-    } else {
-        DeleteTree(node->left);
-        DeleteTree(node->right);
-        delete node;
-    }
-}
-
-void HuffmanTree::DeleteTree() {
-    DeleteTree(root);
+void HuffmanTree::Reset() {
+    delete root;
     root = nullptr;
 }
 
