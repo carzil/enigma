@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
     codec.learn(v);
 
     begin = clock();
-    for (size_t i = 0; i < v.size(); i++) {
+    for (size_t i = 0; i < encoded.size(); i++) {
         codec.encode(vv[i], encoded[i]);
         compressed_size += encoded[i].size();
         file_size += vv[i].size();
@@ -106,8 +106,9 @@ int main(int argc, char **argv) {
 
     std::ofstream fout(fname + "_unpacked");
     begin = clock();
+    std::string decoded;
     for (std::string& str : encoded) {
-        std::string decoded;
+        decoded.clear();
         codec.decode(str, decoded);
         fout << decoded << std::endl;
     }

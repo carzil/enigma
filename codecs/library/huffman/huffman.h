@@ -87,17 +87,32 @@ namespace Codecs {
         }
     };
 
+    class PrefixTable {
+        public: 
+            struct PrefixTableEntry {
+                PrefixTable* nextTable;
+                int symbol;
+                size_t length;
+
+                PrefixTableEntry() : nextTable(nullptr), symbol(0), length(0) {}
+            };
+
+            PrefixTableEntry* entries[256];
+
+            PrefixTable() {
+                for (size_t i = 0; i < 256; i++) {
+                    entries[i] = nullptr;
+                }
+            }
+    };
+
     class HuffmanTree {
         private:
             size_t* frequencies; // chars + EOF
-
-            void GenerateCodes(HuffmanNode* node, vector<bool>& codeword, size_t depth);
-            void GenerateCodes();
             void BuildTree();
 
         public:
             HuffmanNode* root;
-            Codeword** char_table[9];
             HuffmanTree();
             ~HuffmanTree();
 
@@ -109,9 +124,17 @@ namespace Codecs {
     class HuffmanCodec : public CodecIFace {
         private:
             HuffmanTree* tree;
+            Codeword* char_table[9][258];
+            PrefixTable* prefix_table;
+
+            void GenerateCodes(HuffmanNode* node, vector<bool>& codeword, size_t depth);
+            void GenerateCodes();
+
+            void FillSymbolTable(int symbol, size_t length, PrefixTable* table, int lastChunk, int pos);
 
         public:
             HuffmanCodec();
+            ~HuffmanCodec();
 
             virtual void encode(const string_view&, string&) const override;
             virtual void decode(const string_view&, string&) const override;

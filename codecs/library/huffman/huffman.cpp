@@ -25,16 +25,10 @@ namespace Codecs {
     HuffmanTree::HuffmanTree() : root(nullptr) {
         frequencies = new size_t[256 + 2];
         memset(frequencies, 0, sizeof(size_t) * (256 + 2));
-        for (size_t i = 0; i <= 8; i++) {
-            char_table[i] = new Codeword*[256 + 2];
-        }
     }
 
     HuffmanTree::~HuffmanTree() {
         delete[] frequencies;
-        for (size_t i = 0; i <= 8; i++) {
-            delete[] char_table[i];
-        }
     }
 
     void pr(std::vector<char>& v, size_t pos) {
@@ -42,34 +36,6 @@ namespace Codecs {
         for (size_t i = 0; i < pos; i++) {
             p.push_back(v[i]);
         }
-    }
-
-    void HuffmanTree::GenerateCodes(HuffmanNode* node, vector<bool>& bits, size_t depth) {
-        // std::cout << pos << std::endl;
-        if (node == nullptr) {
-            return;
-        }
-
-        bits.push_back(0);
-        GenerateCodes(node->left, bits, depth + 1);
-        bits.back() = 1;
-        GenerateCodes(node->right, bits, depth + 1);
-        bits.resize(bits.size() - 1);
-
-        if (node->left == nullptr && node->right == nullptr) {
-            for (size_t bitOffset = 0; bitOffset <= 8; bitOffset++) {
-                Codeword* cw = new Codeword(bits, bitOffset);
-                char_table[bitOffset][node->c] = cw;
-            }
-            std::cout << "code for '" << (char)node->c << "' (";
-            std::cout << node->c << ") is " << *char_table[0][node->c] << ", depth = " << depth << std::endl;
-            // std::cout << "======" << std::endl;
-        }
-    }
-
-    void HuffmanTree::GenerateCodes() {
-        vector<bool> bits;
-        GenerateCodes(root, bits, 0);
     }
 
     void HuffmanTree::LearnOnString(const string& str) {
@@ -115,35 +81,112 @@ namespace Codecs {
         if (root == nullptr) {
             clock_t begin = clock();
             BuildTree();
-            GenerateCodes();
             clock_t end = clock();
             double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
             std::cout << "tree builded in " << elapsed_secs << " secs" << std::endl;
         }
     }
 
-    // int HuffmanTree::Decode(bitstring& stream) {
-    //     HuffmanNode* current_node = root;
-    //     while (!(current_node->left == nullptr && current_node->right == nullptr)) {
-    //         bool bit = stream.getBit();
-    //         // std::cout << bit;
-    //         if (bit) {
-    //             current_node = current_node->right;
-    //         } else {
-    //             current_node = current_node->left;
-    //         }
-    //     }
-    //     // std::cout << "|";
-    //     if (current_node->c == 257) {
-    //         // std::cout << "found ESC" << std::endl;
-    //         return stream.getChar();
-    //     } else {
-    //         return current_node->c;
-    //     }
-    // }
+    void HuffmanCodec::GenerateCodes(HuffmanNode* node, vector<bool>& bits, size_t depth) {
+        // std::cout << pos << std::endl;
+        if (node == nullptr) {
+            return;
+        }
+
+        bits.push_back(0);
+        GenerateCodes(node->left, bits, depth + 1);
+        bits.back() = 1;
+        GenerateCodes(node->right, bits, depth + 1);
+        bits.resize(bits.size() - 1);
+
+        if (node->left == nullptr && node->right == nullptr) {
+            for (size_t bitOffset = 0; bitOffset <= 8; bitOffset++) {
+                Codeword* cw = new Codeword(bits, bitOffset);
+                char_table[bitOffset][node->c] = cw;
+            }
+            std::cout << "code for '" << (char)node->c << "' (";
+            std::cout << node->c << ") is " << *char_table[0][node->c] << ", depth = " << depth << std::endl;
+            // std::cout << "======" << std::endl;
+        }
+    }
+
+    void print_char_bits(char c) {
+        int bitPos = 7;
+        while (bitPos >= 0) {
+            std::cout << bool(c & (1 << bitPos));
+            bitPos--;
+        }
+    }
+
+    void HuffmanCodec::FillSymbolTable(int symbol, size_t length, PrefixTable* table, int lastChunk, int pos) {
+        if (pos == -1) {
+            table->entries[lastChunk] = new PrefixTable::PrefixTableEntry();
+            table->entries[lastChunk]->symbol = symbol;
+            table->entries[lastChunk]->length = length;
+            table->entries[lastChunk]->nextTable = nullptr;
+            // print_char_bits(lastChunk); std::cout << " -> '" << (char)symbol << "' (" << symbol << "), execess = " << length << std::endl;
+        } else {
+            FillSymbolTable(symbol, length, table, lastChunk | (1 << pos), pos - 1);
+            FillSymbolTable(symbol, length, table, lastChunk, pos - 1);
+        }
+    }
+
+    void HuffmanCodec::GenerateCodes() {
+        vector<bool> bits;
+        GenerateCodes(tree->root, bits, 0);
+
+        for (size_t i = 0; i <= 256; i++) {
+            Codeword* cw = char_table[0][i];
+            if (cw == nullptr) {
+                continue;
+            }
+            PrefixTable* table = prefix_table;
+            for (size_t i = 0; i < cw->size - 1; i++) {
+                PrefixTable::PrefixTableEntry* entry = table->entries[cw->packedBits[i]];
+
+                if (entry == nullptr) {
+                    entry = table->entries[cw->packedBits[i]] = new PrefixTable::PrefixTableEntry();
+                }
+
+                table = entry->nextTable;
+                if (table == nullptr) {
+                    entry->nextTable = new PrefixTable();
+                    table = entry->nextTable;
+                }
+            }
+            if (cw->lastBitsCount == 0) {
+                int lastChunk = cw->packedBits[cw->size - 1];
+                table->entries[lastChunk]->symbol = i;
+                table->entries[lastChunk]->nextTable = nullptr;
+                table->entries[lastChunk]->length = 0;
+            } else {
+                FillSymbolTable(i, cw->lastBitsCount, table, cw->packedBits[cw->size - 1], 7 - cw->lastBitsCount);
+            }
+        }
+    }
+
 
     HuffmanCodec::HuffmanCodec() {
         tree = new HuffmanTree();
+
+        for (size_t i = 0; i <= 8; i++) {
+            for (size_t j = 0; j < 256 + 2; j++) {
+                char_table[i][j] = nullptr;
+            }
+        }
+
+        prefix_table = new PrefixTable();
+    }
+
+    HuffmanCodec::~HuffmanCodec() {
+        delete tree;
+        for (size_t i = 0; i <= 8; i++) {
+            for (size_t j = 0; j <= 256 + 2; j++) {
+                if (char_table[i][j] != nullptr) {
+                    // delete char_table[i][j];
+                }
+            }
+        }
     }
 
     void HuffmanCodec::learn(const vector<string>& vec) {
@@ -155,6 +198,7 @@ namespace Codecs {
         double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
         std::cout << "learning done in " << elapsed_secs << " secs" << std::endl;
         tree->Build();
+        GenerateCodes();
     }
 
     void HuffmanCodec::encode(const string_view& raw, string& encoded) const {
@@ -170,7 +214,7 @@ namespace Codecs {
             } else {
                 ch = 256;
             }
-            Codeword* cw = tree->char_table[bitOffset][ch];
+            Codeword* cw = char_table[bitOffset][ch];
             // std::cout << "merging codeword " << ch << " = " << *tree->char_table[0][ch] << ", offset is " << bitOffset << std::endl;
             bitContainer |= cw->packedBits[0];
             if (cw->size > 1) {
@@ -178,7 +222,7 @@ namespace Codecs {
                 // ptr++;
                 encoded.push_back(bitContainer);
                 for (size_t j = 1; j < cw->size - 1; j++) {
-                    encoded.push_back(cw->packedBits[i]);
+                    encoded.push_back(cw->packedBits[j]);
                 }
                 // memcpy(ptr, cw->packedBits, (cw->size - 1) * sizeof(uint8_t));
                 // ptr += cw->size - 2;
@@ -206,33 +250,44 @@ namespace Codecs {
 
     void HuffmanCodec::decode(const string_view& raw, string& result) const {
         result.reserve(2 * raw.size());
-        int bitPos = 7;
-        size_t pos = 0;
-        uint8_t bitContainer = raw[0];
-        HuffmanNode* ptr = tree->root;
+        int bitPos = 0;
+        size_t pos = 1;
+        uint8_t bitContainerLeft = raw[0];
+        uint8_t bitContainerRight = 0;
+        if (raw.size() > 1) {
+            bitContainerRight = raw[1];
+        }
+        uint8_t bits = 0;
         bool decoding = true;
+        PrefixTable* table = prefix_table;
         while (decoding) {
-            while (!(ptr->left == nullptr && ptr->right == nullptr)) {
-                if (bitPos == -1) {
-                    pos++;
-                    bitContainer = raw[pos];
-                    bitPos = 7;
-                }
-                bool bit = bitContainer & (1 << bitPos);
-                bitPos--;
-                // std::cout << bit;
-                if (bit) {
-                    ptr = ptr->right;
+            bits = (bitContainerLeft << bitPos) | (bitContainerRight >> (8 - bitPos));
+            // print_char_bits(bits); std::cout << " "; print_char_bits(bitContainerLeft); std::cout << " "; print_char_bits(bitContainerRight); std::cout << " " << bitPos << std::endl;
+            PrefixTable::PrefixTableEntry* entry = table->entries[bits];
+            if (entry->nextTable == nullptr) {
+                int symbol = entry->symbol;
+                if (symbol != 256) {
+                    result.push_back(symbol);
+                    bitPos += entry->length;
                 } else {
-                    ptr = ptr->left;
+                    decoding = false;
+                    break;
                 }
-            }
-            if (ptr->c == 256) {
-                decoding = false;
+                table = prefix_table;
             } else {
-                result.push_back(ptr->c);
+                table = entry->nextTable;
+                bitPos += 8;
             }
-            ptr = tree->root;
+            if (bitPos >= 8) {
+                bitPos -= 8;
+                bitContainerLeft = raw[pos];
+                if (pos + 1 < raw.size()) {
+                    bitContainerRight = raw[pos + 1];
+                } else {
+                    bitContainerRight = 0;
+                }
+                pos++;
+            }
         }
         // std::cout << std::endl;
     }
