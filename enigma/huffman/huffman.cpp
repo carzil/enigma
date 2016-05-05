@@ -27,9 +27,10 @@ void HuffmanCodec::GenerateCodes(HuffmanNode* node, vector<bool>& bits, size_t d
             Codeword* cw = new Codeword(bits, bitOffset);
             char_table[bitOffset][node->c] = cw;
         }
-        // std::cout << "code for '" << (char)node->c << "' (";
-        // std::cout << node->c << ") is " << *char_table[0][node->c] << ", depth = " << depth << std::endl;
-        // std::cout << "======" << std::endl;
+#ifdef DEBUG
+        std::cout << "code for '" << (char)node->c << "' (";
+        std::cout << node->c << ") is " << *char_table[0][node->c] << ", depth = " << depth << std::endl;
+#endif
     }
 }
 
