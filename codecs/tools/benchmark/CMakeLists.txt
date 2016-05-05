@@ -1,5 +1,0 @@
-TARGET_NAME()
-
-ADD_EXECUTABLE("${TARGET_NAME}" benchmark.cpp)
-
-TARGET_LINK_LIBRARIES("${TARGET_NAME}" external-gbench)

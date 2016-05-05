@@ -1,16 +1,16 @@
-cmake_minimum_required(VERSION 3.0)
+find_package(GTest REQUIRED)
 
-project(codecs)
-
-enable_testing()
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
-
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/common.cmake)
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${GTEST_INCLUDE_LIBS}
+)
 
 if(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -Ofast -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -Ofast -Wall -Wextra -fsanitize=address")
 endif()
 
-add_subdirectory(external)
-add_subdirectory(library)
+add_subdirectory(common)
+add_subdirectory(huffman)
+add_subdirectory(tests_common)
 add_subdirectory(tools)
