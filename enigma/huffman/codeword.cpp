@@ -1,5 +1,6 @@
 #include <iostream>
-#include "huffman/codeword.h"
+
+#include "enigma/huffman/codeword.h"
 
 namespace Codecs {
 

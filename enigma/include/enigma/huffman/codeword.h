@@ -4,11 +4,13 @@
 #include <cstdint>
 #include <vector>
 
+#include "enigma_export.h"
+
 namespace Codecs {
 
 const size_t MAX_CODEWORD_LEGTH = 63;
 
-class Codeword {
+class ENIGMA_NO_EXPORT Codeword {
     private:
         void pack(const std::vector<bool>& bits, size_t bitOffset);
 

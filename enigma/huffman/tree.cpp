@@ -2,7 +2,8 @@
 #include <iostream>
 #include <queue>
 #include <vector>
-#include "huffman/tree.h"
+
+#include "enigma/huffman/tree.h"
 
 namespace Codecs {
 

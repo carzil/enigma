@@ -2,10 +2,11 @@
 
 #include <cstdlib>
 #include <string>
+#include "enigma_export.h"
 
 namespace Codecs {
 
-struct HuffmanNode {
+struct ENIGMA_NO_EXPORT HuffmanNode {
     HuffmanNode* left;
     HuffmanNode* right;
     int c;
@@ -19,7 +20,7 @@ struct HuffmanNode {
     bool operator<(const HuffmanNode& other);
 };
 
-class HuffmanTree {
+class ENIGMA_NO_EXPORT HuffmanTree {
     private:
         size_t* frequencies; // chars + EOF
 

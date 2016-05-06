@@ -1,8 +1,8 @@
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "huffman/huffman.h"
-#include "tests_common/tests_common.h"
+#include <enigma/huffman/huffman.h>
 
 int main(int argc, char **argv) {
     Codecs::HuffmanCodec codec;

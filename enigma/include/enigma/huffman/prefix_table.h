@@ -1,10 +1,11 @@
 #pragma once
 
 #include <cstdlib>
+#include "enigma_export.h"
 
 namespace Codecs {
 
-class PrefixTable {
+class ENIGMA_NO_EXPORT PrefixTable {
     public: 
         struct PrefixTableEntry {
             PrefixTable* nextTable;

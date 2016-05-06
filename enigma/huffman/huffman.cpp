@@ -5,7 +5,7 @@
 #include <vector>
 #include <cstring>
 
-#include "huffman.h"
+#include "enigma/huffman/huffman.h"
 
 
 namespace Codecs {

@@ -1,9 +1,9 @@
-target_lib(
-    SOURCES huffman.h huffman.cpp
-            tree.h tree.cpp
-            prefix_table.h prefix_table.cpp
-            codeword.h codeword.cpp
-    LINK_DEPS enigma-common
-)
+set(SOURCES
+    ${SOURCES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/huffman.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tree.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/prefix_table.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codeword.cpp
 
-add_subdirectory(test)
+    PARENT_SCOPE
+)

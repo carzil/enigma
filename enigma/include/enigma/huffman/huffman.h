@@ -5,14 +5,15 @@
 #include <memory>
 #include <vector>
 
-#include "common/codec.h"
-#include "huffman/tree.h"
-#include "huffman/codeword.h"
-#include "huffman/prefix_table.h"
+#include "enigma/common/codec.h"
+#include "enigma/huffman/tree.h"
+#include "enigma/huffman/codeword.h"
+#include "enigma/huffman/prefix_table.h"
+#include "enigma_export.h"
 
 namespace Codecs {
 
-class HuffmanCodec : public CodecIFace {
+class ENIGMA_API HuffmanCodec : public CodecIFace {
     private:
         HuffmanTree* tree;
         Codeword* char_table[9][258];
