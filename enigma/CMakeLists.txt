@@ -1,14 +1,11 @@
-find_package(GTest REQUIRED)
 include(GenerateExportHeader)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${GTEST_INCLUDE_LIBS}
 )
 
-
-set(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp)
 
 add_subdirectory(common)
 add_subdirectory(huffman)

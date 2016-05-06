@@ -22,8 +22,6 @@ class ENIGMA_API HuffmanCodec : public CodecIFace {
         void GenerateCodes(HuffmanNode* node, vector<bool>& codeword, size_t depth);
         void GenerateCodes();
 
-        void FillSymbolTable(int symbol, size_t length, PrefixTable* table, int lastChunk, int pos);
-
     public:
         HuffmanCodec();
         ~HuffmanCodec();

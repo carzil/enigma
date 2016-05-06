@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include "enigma/huffman/huffman.h"
+#include "enigma/utils.h"
 
 
 namespace Codecs {
@@ -27,31 +28,8 @@ void HuffmanCodec::GenerateCodes(HuffmanNode* node, vector<bool>& bits, size_t d
             Codeword* cw = new Codeword(bits, bitOffset);
             char_table[bitOffset][node->c] = cw;
         }
-#ifdef DEBUG
-        std::cout << "code for '" << (char)node->c << "' (";
-        std::cout << node->c << ") is " << *char_table[0][node->c] << ", depth = " << depth << std::endl;
-#endif
-    }
-}
-
-void print_char_bits(char c) {
-    int bitPos = 7;
-    while (bitPos >= 0) {
-        std::cout << bool(c & (1 << bitPos));
-        bitPos--;
-    }
-}
-
-void HuffmanCodec::FillSymbolTable(int symbol, size_t length, PrefixTable* table, int lastChunk, int pos) {
-    if (pos == -1) {
-        table->entries[lastChunk] = new PrefixTable::PrefixTableEntry();
-        table->entries[lastChunk]->symbol = symbol;
-        table->entries[lastChunk]->length = length;
-        table->entries[lastChunk]->nextTable = nullptr;
-        // print_char_bits(lastChunk); std::cout << " -> '" << (char)symbol << "' (" << symbol << "), execess = " << length << std::endl;
-    } else {
-        FillSymbolTable(symbol, length, table, lastChunk | (1 << pos), pos - 1);
-        FillSymbolTable(symbol, length, table, lastChunk, pos - 1);
+        // std::cout << "code for '" << (char)node->c << "' (";
+        // std::cout << node->c << ") is " << *char_table[0][node->c] << ", depth = " << depth << std::endl;
     }
 }
 
@@ -59,33 +37,12 @@ void HuffmanCodec::GenerateCodes() {
     vector<bool> bits;
     GenerateCodes(tree->root, bits, 0);
 
-    for (size_t i = 0; i <= 256; i++) {
+    for (int i = 0; i <= 256; i++) {
         Codeword* cw = char_table[0][i];
         if (cw == nullptr) {
             continue;
         }
-        PrefixTable* table = prefix_table;
-        for (size_t i = 0; i < cw->size - 1; i++) {
-            PrefixTable::PrefixTableEntry* entry = table->entries[cw->packedBits[i]];
-
-            if (entry == nullptr) {
-                entry = table->entries[cw->packedBits[i]] = new PrefixTable::PrefixTableEntry();
-            }
-
-            table = entry->nextTable;
-            if (table == nullptr) {
-                entry->nextTable = new PrefixTable();
-                table = entry->nextTable;
-            }
-        }
-        if (cw->lastBitsCount == 0) {
-            int lastChunk = cw->packedBits[cw->size - 1];
-            table->entries[lastChunk]->symbol = i;
-            table->entries[lastChunk]->nextTable = nullptr;
-            table->entries[lastChunk]->length = 0;
-        } else {
-            FillSymbolTable(i, cw->lastBitsCount, table, cw->packedBits[cw->size - 1], 7 - cw->lastBitsCount);
-        }
+        prefix_table->AddCodeword(cw, i);
     }
 }
 
@@ -128,8 +85,6 @@ void HuffmanCodec::learn(const vector<string>& vec) {
 
 void HuffmanCodec::encode(const string_view& raw, string& encoded) const {
     encoded.reserve(2 * raw.size());
-    // char* encoded = new char[2 * raw.size()];
-    // char* ptr = encoded;
     uint8_t bitContainer = 0;
     size_t bitOffset = 0;
     for (size_t i = 0; i < raw.size() + 1; i++) {
@@ -143,21 +98,15 @@ void HuffmanCodec::encode(const string_view& raw, string& encoded) const {
         // std::cout << "merging codeword " << ch << " = " << *tree->char_table[0][ch] << ", offset is " << bitOffset << std::endl;
         bitContainer |= cw->packedBits[0];
         if (cw->size > 1) {
-            // *ptr = bitContainer;
-            // ptr++;
             encoded.push_back(bitContainer);
             for (size_t j = 1; j < cw->size - 1; j++) {
                 encoded.push_back(cw->packedBits[j]);
             }
-            // memcpy(ptr, cw->packedBits, (cw->size - 1) * sizeof(uint8_t));
-            // ptr += cw->size - 2;
             bitContainer = cw->packedBits[cw->size - 1];
         }
         bitOffset = cw->lastBitsCount;
     }
     if (bitOffset > 0) {
-        // *ptr = bitContainer;
-        // ptr++;
         encoded.push_back(bitContainer);
     }
 

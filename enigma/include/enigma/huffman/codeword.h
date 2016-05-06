@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <cstdint>
+#include <iostream>
 #include <vector>
 
 #include "enigma_export.h"

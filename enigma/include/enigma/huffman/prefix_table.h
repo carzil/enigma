@@ -1,11 +1,15 @@
 #pragma once
 
 #include <cstdlib>
+#include "enigma/huffman/codeword.h"
 #include "enigma_export.h"
 
 namespace Codecs {
 
 class ENIGMA_NO_EXPORT PrefixTable {
+    private:
+        void FillSymbolTable(int symbol, size_t length, PrefixTable* table, int lastChunk, int pos);
+
     public: 
         struct PrefixTableEntry {
             PrefixTable* nextTable;
@@ -24,6 +28,8 @@ class ENIGMA_NO_EXPORT PrefixTable {
 
         PrefixTable();
         ~PrefixTable();
+
+        void AddCodeword(Codeword*, int);
 };
 
 }
