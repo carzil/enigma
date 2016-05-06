@@ -9,6 +9,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -O0 -g -fsanitize=address -DDEBUG"
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Ofast -march=native")
 
 if (enigma_build_tests)
+    enable_testing()
     add_subdirectory(tests)
     # because Enigma have some private API, hidden in shared library,
     # we need use static linking
