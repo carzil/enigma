@@ -1,3 +1,11 @@
-# Скелет проекта
+Enigma is a library for compressing a large amount of small strings.
 
-Для использования нужно форкнуть к себе. К сожалению, некоторые вещи я не успел доделать, поэтому придётся чуть позже домёржить из мастера.
+# Building
+You can build and install Enigma with:
+
+```bash
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Realase
+make
+make install
+```
