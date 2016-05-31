@@ -1,0 +1,4 @@
+set(SOURCES ${SOURCES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/enigma.cpp
+    PARENT_SCOPE
+)

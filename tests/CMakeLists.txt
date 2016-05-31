@@ -15,3 +15,4 @@ function(enigma_test)
 endfunction()
 
 enigma_test(NAME huffman_tests SOURCES huffman_tests.cpp)
+enigma_test(NAME dictionary_tests SOURCES dictionary_tests.cpp)

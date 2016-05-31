@@ -7,56 +7,35 @@
 
 #include "enigma/huffman/huffman.h"
 #include "enigma/utils.h"
+#include "enigma/colors.h"
 
 
 namespace Codecs {
 
-void HuffmanCodec::GenerateCodes(HuffmanNode* node, vector<bool>& bits, size_t depth) {
-    // std::cout << pos << std::endl;
-    if (node == nullptr) {
-        return;
-    }
-
-    bits.push_back(0);
-    GenerateCodes(node->left, bits, depth + 1);
-    bits.back() = 1;
-    GenerateCodes(node->right, bits, depth + 1);
-    bits.resize(bits.size() - 1);
-
-    if (node->left == nullptr && node->right == nullptr) {
-        for (size_t bitOffset = 0; bitOffset <= 8; bitOffset++) {
-            Codeword* cw = new Codeword(bits, bitOffset);
-            char_table[bitOffset][node->c] = cw;
-        }
-        // std::cout << "code for '" << (char)node->c << "' (";
-        // std::cout << node->c << ") is " << *char_table[0][node->c] << ", depth = " << depth << std::endl;
-    }
-}
-
 void HuffmanCodec::GenerateCodes() {
     vector<bool> bits;
-    GenerateCodes(tree->root, bits, 0);
+    auto codes = tree->GenerateCodes();
 
-    for (int i = 0; i <= 256; i++) {
-        Codeword* cw = char_table[0][i];
-        if (cw == nullptr) {
-            continue;
-        }
-        prefix_table->AddCodeword(cw, i);
+    for (auto p : codes) {
+        Codeword* cw = new Codeword(p.second);
+        prefix_table->AddCodeword(cw, p.first);
+        char_table[p.first] = cw;
     }
+
+    tree->Inorder();
 }
 
 
 HuffmanCodec::HuffmanCodec() {
     tree = new HuffmanTree();
 
-    for (size_t i = 0; i <= 8; i++) {
-        for (size_t j = 0; j < 256 + 2; j++) {
-            char_table[i][j] = nullptr;
-        }
+    for (size_t j = 0; j < 256 + 2; j++) {
+        char_table[j] = nullptr;
     }
 
     prefix_table = new PrefixTable();
+
+    memset(frequencies, 0, (256 + 2) * sizeof(size_t));
 }
 
 HuffmanCodec::~HuffmanCodec() {
@@ -66,49 +45,66 @@ HuffmanCodec::~HuffmanCodec() {
     if (prefix_table != nullptr) {
         delete prefix_table;
     }
-    for (size_t i = 0; i <= 8; i++) {
-        for (size_t j = 0; j < 256 + 2; j++) {
-            if (char_table[i][j] != nullptr) {
-                delete char_table[i][j];
-            }
+    for (size_t j = 0; j < 256 + 2; j++) {
+        if (char_table[j] != nullptr) {
+            delete char_table[j];
         }
     }
 }
 
-void HuffmanCodec::learn(const vector<string>& vec) {
+void HuffmanCodec::Learn(const vector<string>& vec) {
     for (const string& str : vec) {
-        tree->LearnOnString(str);
+        Learn(str);
+    }
+}
+
+void HuffmanCodec::Learn(const string& str) {
+    for (size_t i = 0; i < str.size(); i++) {
+        frequencies[static_cast<uint8_t>(str[i])]++;
+    }
+}
+
+void HuffmanCodec::EndLearning() {
+    for (size_t i = 0; i < 256 + 2; i++) {
+        if (frequencies[i] > 0 || i == 256) {
+            tree->PushValue(i, frequencies[i]);
+        }
     }
     tree->Build();
     GenerateCodes();
 }
 
-void HuffmanCodec::encode(const string_view& raw, string& encoded) const {
-    encoded.reserve(2 * raw.size());
+size_t HuffmanCodec::encode(const string_view& raw, char* encoded) {
     uint8_t bitContainer = 0;
     size_t bitOffset = 0;
+    char* start = encoded;
     for (size_t i = 0; i < raw.size() + 1; i++) {
         unsigned int ch;
         if (i != raw.size()) {
-            ch = raw[i];
+            ch = static_cast<uint8_t>(raw[i]);
         } else {
             ch = 256;
         }
-        Codeword* cw = char_table[bitOffset][ch];
+        Codeword* cw = char_table[ch];
         // std::cout << "merging codeword " << ch << " = " << *tree->char_table[0][ch] << ", offset is " << bitOffset << std::endl;
-        bitContainer |= cw->packedBits[0];
-        if (cw->size > 1) {
-            encoded.push_back(bitContainer);
-            for (size_t j = 1; j < cw->size - 1; j++) {
-                encoded.push_back(cw->packedBits[j]);
-            }
-            bitContainer = cw->packedBits[cw->size - 1];
+        bitContainer |= cw->packedBits[bitOffset][0];
+        if (cw->size[bitOffset] > 1) {
+            memcpy(encoded, cw->packedBits[bitOffset], cw->size[bitOffset] - 1);
+            encoded += cw->size[bitOffset] - 1;
+            // encoded.push_back(bitContainer);
+            // for (size_t j = 1; j < cw->size[bitOffset] - 1; j++) {
+            //     encoded.push_back(cw->packedBits[bitOffset][j]);
+            // }
+            bitContainer = cw->packedBits[bitOffset][cw->size[bitOffset] - 1];
         }
-        bitOffset = cw->lastBitsCount;
+        bitOffset = cw->lastBitsCount[bitOffset];
     }
     if (bitOffset > 0) {
-        encoded.push_back(bitContainer);
+        *encoded = bitContainer;
+        encoded++;
     }
+
+    return encoded - start;
 
     // for (char c : encoded) {
     //     int bitPos = 7;
@@ -122,48 +118,49 @@ void HuffmanCodec::encode(const string_view& raw, string& encoded) const {
     // return string_view(encoded, ptr - encoded);
 }
 
-void HuffmanCodec::decode(const string_view& raw, string& result) const {
-    result.reserve(2 * raw.size());
-    int bitPos = 0;
-    size_t pos = 1;
-    uint8_t bitContainerLeft = raw[0];
-    uint8_t bitContainerRight = 0;
-    if (raw.size() > 1) {
-        bitContainerRight = raw[1];
-    }
-    uint8_t bits = 0;
-    bool decoding = true;
-    PrefixTable* table = prefix_table;
-    while (decoding) {
-        bits = (bitContainerLeft << bitPos) | (bitContainerRight >> (8 - bitPos));
-        // print_char_bits(bits); std::cout << " "; print_char_bits(bitContainerLeft); std::cout << " "; print_char_bits(bitContainerRight); std::cout << " " << bitPos << std::endl;
-        PrefixTable::PrefixTableEntry* entry = table->entries[bits];
-        if (entry->nextTable == nullptr) {
-            int symbol = entry->symbol;
-            if (symbol != 256) {
-                result.push_back(symbol);
-                bitPos += entry->length;
-            } else {
-                decoding = false;
-                break;
-            }
-            table = prefix_table;
-        } else {
-            table = entry->nextTable;
-            bitPos += 8;
-        }
-        if (bitPos >= 8) {
-            bitPos -= 8;
-            bitContainerLeft = raw[pos];
-            if (pos + 1 < raw.size()) {
-                bitContainerRight = raw[pos + 1];
-            } else {
-                bitContainerRight = 0;
-            }
-            pos++;
-        }
-    }
+size_t HuffmanCodec::decode(const string_view& raw, char* result) {
+    // result.reserve(2 * raw.size());
+    // int bitPos = 0;
+    // size_t pos = 1;
+    // uint8_t bitContainerLeft = raw[0];
+    // uint8_t bitContainerRight = 0;
+    // if (raw.size() > 1) {
+    //     bitContainerRight = raw[1];
+    // }
+    // uint8_t bits = 0;
+    // bool decoding = true;
+    // PrefixTable* table = prefix_table;
+    // while (decoding) {
+    //     bits = (bitContainerLeft << bitPos) | (bitContainerRight >> (8 - bitPos));
+    //     // print_char_bits(bits); std::cout << " "; print_char_bits(bitContainerLeft); std::cout << " "; print_char_bits(bitContainerRight); std::cout << " " << bitPos << std::endl;
+    //     PrefixTable::PrefixTableEntry* entry = table->entries[bits];
+    //     if (entry->nextTable == nullptr) {
+    //         int symbol = entry->symbol;
+    //         if (symbol != 256) {
+    //             result.push_back(symbol);
+    //             bitPos += entry->length;
+    //         } else {
+    //             decoding = false;
+    //             break;
+    //         }
+    //         table = prefix_table;
+    //     } else {
+    //         table = entry->nextTable;
+    //         bitPos += 8;
+    //     }
+    //     if (bitPos >= 8) {
+    //         bitPos -= 8;
+    //         bitContainerLeft = raw[pos];
+    //         if (pos + 1 < raw.size()) {
+    //             bitContainerRight = raw[pos + 1];
+    //         } else {
+    //             bitContainerRight = 0;
+    //         }
+    //         pos++;
+    //     }
+    // }
     // std::cout << std::endl;
+    return 0;
 }
 
 string HuffmanCodec::save() const {
@@ -182,12 +179,10 @@ void HuffmanCodec::reset() {
         tree->Reset();
     }
 
-    for (size_t i = 0; i <= 8; i++) {
-        for (size_t j = 0; j < 256 + 2; j++) {
-            if (char_table[i][j] != nullptr) {
-                delete char_table[i][j];
-                char_table[i][j] = nullptr;
-            }
+    for (size_t j = 0; j < 256 + 2; j++) {
+        if (char_table[j] != nullptr) {
+            delete char_table[j];
+            char_table[j] = nullptr;
         }
     }
 

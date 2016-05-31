@@ -4,21 +4,19 @@
 #include <vector>
 
 #include "enigma/huffman/tree.h"
+#include "enigma/colors.h"
 
 namespace Codecs {
 
-class HuffmanComparator {
-    public:
-        bool operator() (HuffmanNode*& lhs, HuffmanNode*& rhs) const {
-            return lhs->frequency > rhs->frequency;
-        }
-};
+HuffmanTree::Node::Node() : left(nullptr), right(nullptr), c(0), frequency(0) {}
+HuffmanTree::Node::Node(HuffmanTree::Node* left, HuffmanTree::Node* right, size_t frequency) : left(left), right(right), c(0), frequency(frequency) {}
+HuffmanTree::Node::Node(size_t c, size_t frequency) : left(nullptr), right(nullptr), c(c), frequency(frequency) {}
 
-HuffmanNode::HuffmanNode() : left(nullptr), right(nullptr), frequency(0) {}
-HuffmanNode::HuffmanNode(HuffmanNode* left, HuffmanNode* right, size_t frequency) : left(left), right(right), frequency(frequency) {}
-HuffmanNode::HuffmanNode(int c, size_t frequency) : left(nullptr), right(nullptr), c(c), frequency(frequency) {}
+bool HuffmanTree::Comparator::operator()(HuffmanTree::Node* left, HuffmanTree::Node* right) {
+    return left->frequency > right->frequency;
+}
 
-HuffmanNode::~HuffmanNode() {
+HuffmanTree::Node::~Node() {
     if (left != nullptr) {
         delete left;
     }
@@ -28,43 +26,36 @@ HuffmanNode::~HuffmanNode() {
     }
 }
 
-HuffmanTree::HuffmanTree() : root(nullptr) {
-    frequencies = new size_t[256 + 2];
-    memset(frequencies, 0, sizeof(size_t) * (256 + 2));
-}
+HuffmanTree::HuffmanTree() : root(nullptr) {}
 
 HuffmanTree::~HuffmanTree() {
     delete root;
-    delete[] frequencies;
 }
 
-void HuffmanTree::LearnOnString(const std::string& str) {
-    for (size_t i = 0; i < str.size(); i++) {
-        frequencies[static_cast<unsigned char>(str[i])]++;
+void HuffmanTree::PushValue(size_t value, size_t frequency) {
+    values.push_back({ value, frequency });
+}
+
+void HuffmanTree::Build() {
+    if (root != nullptr) {
+        return;
     }
-}
 
-void HuffmanTree::BuildTree() {
-    std::priority_queue<HuffmanNode*, std::vector<HuffmanNode*>, HuffmanComparator> queue;
-
-    queue.push(new HuffmanNode(256, 1));
-
-    for (size_t i = 0; i < 256; i++) {
-        if (frequencies[i] > 0) {
-            queue.push(new HuffmanNode(i, frequencies[i]));
-        }
+    std::priority_queue<HuffmanTree::Node*, std::vector<HuffmanTree::Node*>, Comparator> queue;
+    for (auto p : values) {
+        queue.push(new HuffmanTree::Node(p.first, p.second));
     }
 
     while (queue.size() >= 2) {
         // std::cout << queue.top()->c << " " << queue.top()->frequency << std::endl;
-        HuffmanNode* left = queue.top(); 
+        HuffmanTree::Node* left = queue.top(); 
         queue.pop();
         // std::cout << queue.top()->c << " " << queue.top()->frequency << std::endl;
-        HuffmanNode* right = queue.top();
+        HuffmanTree::Node* right = queue.top();
         queue.pop();
 
         // std::cout << "=======" << std::endl;
-        HuffmanNode* node = new HuffmanNode(left, right, left->frequency + right->frequency);
+        HuffmanTree::Node* node = new HuffmanTree::Node(left, right, left->frequency + right->frequency);
         // printf("%d: #%d (%d), #%d (%d)\n", node->frequency, left->c, left->frequency, right->c, right->frequency);
         // std::cout << node->frequency << ": " << left->c << " " << right->c << std::endl;
         queue.push(node);
@@ -72,20 +63,49 @@ void HuffmanTree::BuildTree() {
     root = queue.top();
 }
 
-void HuffmanTree::Build() {
-    // std::cout << "frequencies map: ";
-    // for (size_t i = 0; i < 256; i++) {
-    //     std::cout << frequencies[i] << " ";
-    // }
-    // std::cout << std::endl;
-    if (root == nullptr) {
-        BuildTree();
+void HuffmanTree::Inorder() {
+    Inorder(root, 0);
+}
+
+void HuffmanTree::Inorder(HuffmanTree::Node* node, size_t indent) {
+    if (node == nullptr) {
+        return;
     }
+    for (int i = 0; i < indent; i++) {
+        std::cout << ".";
+    }
+    std::cout << "(" << node->c << ", " << node->frequency << ")" << std::endl;
+    Inorder(node->left, indent + 2);
+    Inorder(node->right, indent + 2);
 }
 
 void HuffmanTree::Reset() {
     delete root;
     root = nullptr;
+}
+
+std::vector<std::pair<size_t, std::vector<bool>>> HuffmanTree::GenerateCodes() {
+    std::vector<std::pair<size_t, std::vector<bool>>> result;
+    std::vector<bool> bits;
+    HuffmanTree::GenerateCodes(root, bits, 0, result);
+    return result;
+}
+
+void HuffmanTree::GenerateCodes(HuffmanTree::Node* node, std::vector<bool>& bits, size_t depth, std::vector<std::pair<size_t, std::vector<bool>>>& result) {
+    if (node == nullptr) {
+        return;
+    }
+
+    if (node->left == nullptr && node->right == nullptr) {
+        result.push_back({ node->c, bits });
+        // std::cout << "code for " << GREEN(node->c) << " (" << GREEN(static_cast<uint8_t>(node->c)) << ")" << " is " << RED(*(new Codeword(bits))) << std::endl;
+    } else {
+        bits.push_back(0);
+        GenerateCodes(node->left, bits, depth + 1, result);
+        bits.back() = 1;
+        GenerateCodes(node->right, bits, depth + 1, result);
+        bits.resize(bits.size() - 1);
+    }
 }
 
 }

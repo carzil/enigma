@@ -18,11 +18,11 @@ PrefixTable::~PrefixTable() {
 
 void PrefixTable::AddCodeword(Codeword* cw, int symbol) {
     PrefixTable* table = this;
-    for (size_t i = 0; i < cw->size - 1; i++) {
-        PrefixTable::PrefixTableEntry* entry = table->entries[cw->packedBits[i]];
+    for (size_t i = 0; i < cw->size[0] - 1; i++) {
+        PrefixTable::PrefixTableEntry* entry = table->entries[cw->packedBits[0][i]];
 
         if (entry == nullptr) {
-            entry = table->entries[cw->packedBits[i]] = new PrefixTable::PrefixTableEntry();
+            entry = table->entries[cw->packedBits[0][i]] = new PrefixTable::PrefixTableEntry();
         }
 
         table = entry->nextTable;
@@ -31,13 +31,13 @@ void PrefixTable::AddCodeword(Codeword* cw, int symbol) {
             table = entry->nextTable;
         }
     }
-    if (cw->lastBitsCount == 0) {
-        int lastChunk = cw->packedBits[cw->size - 1];
+    if (cw->lastBitsCount[0] == 0) {
+        int lastChunk = cw->packedBits[0][cw->size[0] - 1];
         table->entries[lastChunk]->symbol = symbol;
         table->entries[lastChunk]->nextTable = nullptr;
         table->entries[lastChunk]->length = 0;
     } else {
-        FillSymbolTable(symbol, cw->lastBitsCount, table, cw->packedBits[cw->size - 1], 7 - cw->lastBitsCount);
+        FillSymbolTable(symbol, cw->lastBitsCount[0], table, cw->packedBits[0][cw->size[0] - 1], 7 - cw->lastBitsCount[0]);
     }
 }
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdlib>
-#include "enigma/huffman/codeword.h"
+#include "enigma/common/codeword.h"
 #include "enigma_export.h"
 
 namespace Codecs {

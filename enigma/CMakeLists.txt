@@ -8,6 +8,7 @@ include_directories(
 set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp)
 
 add_subdirectory(common)
+add_subdirectory(codecs)
 add_subdirectory(huffman)
 
 add_library(enigma ${SOURCES})

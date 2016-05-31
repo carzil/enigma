@@ -7,24 +7,30 @@
 
 #include "enigma/common/codec.h"
 #include "enigma/common/codeword.h"
+#include "enigma/common/dictionary.h"
 #include "enigma/huffman/tree.h"
 #include "enigma/huffman/prefix_table.h"
 #include "enigma_export.h"
 
 namespace Codecs {
 
-class ENIGMA_API HuffmanCodec : public CodecIFace {
+class ENIGMA_API EnigmaCodec : public CodecIFace {
     private:
-        HuffmanTree* tree;
-        size_t frequencies[258];
-        Codeword* char_table[258]; // here we use two jumps in memory, needs to optimize
+        Dictionary dict;
+        size_t frequencies[Dictionary::MAX_SIZE + 2];
+        Codeword* codes[Dictionary::MAX_SIZE + 2];
+        std::string inverse_codes[Dictionary::MAX_SIZE];
         PrefixTable* prefix_table;
+        size_t endSymbol;
+        size_t valid;
+        size_t invalid;
 
         void GenerateCodes();
+        void WriteCodeword(char*& encoded, Codeword* cw, size_t& bitOffset, uint8_t& bitContainer);
 
     public:
-        HuffmanCodec();
-        ~HuffmanCodec();
+        EnigmaCodec();
+        ~EnigmaCodec();
 
         virtual size_t encode(const string_view&, char*) override;
         virtual size_t decode(const string_view&, char*) override;

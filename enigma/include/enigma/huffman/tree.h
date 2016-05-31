@@ -2,38 +2,52 @@
 
 #include <cstdlib>
 #include <string>
+#include <vector>
+#include <queue>
+#include "enigma/common/codeword.h"
 #include "enigma_export.h"
 
 namespace Codecs {
 
-struct ENIGMA_NO_EXPORT HuffmanNode {
-    HuffmanNode* left;
-    HuffmanNode* right;
-    int c;
-    size_t frequency;
-
-    HuffmanNode();
-    HuffmanNode(int c, size_t frequency);
-    HuffmanNode(HuffmanNode* left, HuffmanNode* right, size_t frequency);
-    ~HuffmanNode();
-
-    bool operator<(const HuffmanNode& other);
-};
-
 class ENIGMA_NO_EXPORT HuffmanTree {
-    private:
-        size_t* frequencies; // chars + EOF
-
-        void BuildTree();
-
     public:
-        HuffmanNode* root;
+        struct Node {
+            Node* left;
+            Node* right;
+
+            size_t c;
+            size_t frequency;
+
+            Node();
+            Node(size_t c, size_t frequency);
+            Node(Node* left, Node* right, size_t frequency);
+            ~Node();
+
+            bool operator<(const Node& other) const;
+        };
+
+        class Comparator {
+            public:
+                bool operator()(Node*, Node*);
+        };
+
+        Node* root;
+
         HuffmanTree();
         ~HuffmanTree();
 
-        void LearnOnString(const std::string&);
+        void PushValue(size_t value, size_t frequency);
+        std::vector<std::pair<size_t, std::vector<bool>>> GenerateCodes();
+        void Inorder();
+
         void Build();
         void Reset();
+
+    private:
+        std::vector<std::pair<size_t, size_t>> values;
+
+        void GenerateCodes(Node* node, std::vector<bool>& bits, size_t depth, std::vector<std::pair<size_t, std::vector<bool>>>& result);
+        void Inorder(Node*, size_t);
 };
 
 }
