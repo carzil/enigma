@@ -98,7 +98,7 @@ void test_from_file(std::vector<std::string>& records) {
     delete in;
     delete out;
 
-    codec.PrintCodes();
+    // codec.PrintCodes();
 
     std::cout << "learning done in " << GREENB(sw.GetElapsedSeconds() << " secs") << std::endl;
 
