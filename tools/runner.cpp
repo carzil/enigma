@@ -16,22 +16,49 @@ using std::experimental::string_view;
 using std::vector;
 using std::string;
 
-class RUsage {
-    private:
-        rusage* usage;
-
+class MemoryWatcher {
     public:
-        RUsage() {
-            usage = (rusage*)malloc(sizeof(rusage));
-            getrusage(RUSAGE_SELF, usage);
+        bool is_running;
+        size_t max_memory;
+        pthread_t thread;
+
+        MemoryWatcher() : is_running(false), max_memory(0) {
+
         }
 
-        ~RUsage() {
+        ~MemoryWatcher() {
+
+        }
+
+        static void* WatchMemory(void* data) {
+            MemoryWatcher* watcher = (MemoryWatcher*)data;
+            rusage* usage = (rusage*)malloc(sizeof(rusage));
+            while (watcher->is_running) {
+                getrusage(RUSAGE_SELF, usage);
+                watcher->max_memory = std::max<size_t>(watcher->max_memory, usage->ru_maxrss * 1024);
+                usleep(10 * 1000);
+            }
             free(usage);
+            return nullptr;
         }
 
-        rusage* operator->() {
-            return usage;
+        void Start() {
+            if (!is_running) {
+                is_running = true;
+                int result = pthread_create(&thread, NULL, MemoryWatcher::WatchMemory, (void*)this);
+            }
+        }
+
+        void Stop() {
+            is_running = false;
+        }
+
+        void Reset() {
+            max_memory = 0;
+        }
+
+        size_t GetMaxMemory() {
+            return max_memory;
         }
 };
 
@@ -64,32 +91,28 @@ const char* unit_names[] = {"Bytes", "KBytes", "MBytes", "GBytes", "TBytes", "PB
 
 std::string format_size(size_t size) {
     size_t i = 0;
-    size_t sz = size;
+    double sz = size;
     while (sz > 1024) {
       sz /= 1024;
       i++;
     }
     std::ostringstream s;
-    s << sz << " " << unit_names[i];
+    s << std::fixed << std::setprecision(2) << sz << " " << unit_names[i];
     return s.str();
-}
-
-void print_usage() {
-    RUsage usage;
-    std::cout << "memory: " << format_size(usage->ru_maxrss * 1024);
-    double user_time = usage->ru_utime.tv_sec + usage->ru_utime.tv_usec / 1000000.0;
-    double system_time = usage->ru_stime.tv_sec + usage->ru_stime.tv_usec / 1000000.0;
-    std::cout << std::fixed << std::setprecision(2) << ", user time: " << user_time << "s , system time: " << system_time << "s" << std::endl;
 }
 
 void test_from_file(std::vector<std::string>& records) {
     Enigma::EnigmaCodec* pre_codec = new Enigma::EnigmaCodec();
     Enigma::EnigmaCodec codec;
     Stopwatch sw;
+    MemoryWatcher mw;
 
     sw.Start();
+    mw.Start();
     pre_codec->Learn(records);
+    mw.Stop();
     sw.Stop();
+
     Enigma::DataOutput* out = new Enigma::DataOutput();
     pre_codec->save(*out);
     Enigma::DataInput* in = new Enigma::DataInput(out->GetStr());
@@ -101,9 +124,11 @@ void test_from_file(std::vector<std::string>& records) {
     // codec.PrintCodes();
 
     std::cout << "learning done in " << GREENB(sw.GetElapsedSeconds() << " secs") << std::endl;
+    std::cout << "max RAM used: " << CYANB(format_size(mw.GetMaxMemory())) << std::endl;
 
     size_t file_size = 0, compressed_size = 0;
-
+    mw.Reset();
+    mw.Start();
     Stopwatch sw_compression, sw_decompression;
     for (size_t i = 0; i < records.size(); i++) {
         std::string enc;
@@ -128,13 +153,20 @@ void test_from_file(std::vector<std::string>& records) {
             std::cout << dec.size() << " " << dec << std::endl;
         }
     }
+    mw.Stop();
+
+    Enigma::DataOutput codec_state;
+    codec.save(codec_state);
+    compressed_size += codec_state.GetStr().size();
 
     std::cout << "compression done in " << GREENB(sw_compression.GetElapsedSeconds() << " secs") << std::endl;
     std::cout << "decompression done in " << YELLOWB(sw_decompression.GetElapsedSeconds() << " secs") << std::endl;
+    std::cout << "max RAM used: " << CYANB(format_size(mw.GetMaxMemory())) << std::endl;
     std::cout << "uncompressed memory: " << GREENB(format_size(file_size)) << std::endl;
     std::cout << "compressed memory: " << GREENB(format_size(compressed_size)) << std::endl;
     std::cout << "saved memory: " << GREENB(format_size(file_size - compressed_size)) << std::endl;
     std::cout << "compression ratio ~ " << std::fixed << std::setprecision(3) << YELLOWB(100 - 100.0 * compressed_size / file_size << "%") << std::endl;
+
 }
 
 int read_file(std::ifstream& stream, std::vector<std::string>& v) {
