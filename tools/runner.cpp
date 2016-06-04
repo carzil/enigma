@@ -102,24 +102,24 @@ std::string format_size(size_t size) {
 }
 
 void test_from_file(std::vector<std::string>& records) {
-    Enigma::EnigmaCodec* pre_codec = new Enigma::EnigmaCodec();
+    // Enigma::EnigmaCodec* pre_codec = new Enigma::EnigmaCodec();
     Enigma::EnigmaCodec codec;
     Stopwatch sw;
     MemoryWatcher mw;
 
     sw.Start();
     mw.Start();
-    pre_codec->Learn(records);
+    codec.Learn(records);
     mw.Stop();
     sw.Stop();
 
-    Enigma::DataOutput* out = new Enigma::DataOutput();
-    pre_codec->save(*out);
-    Enigma::DataInput* in = new Enigma::DataInput(out->GetStr());
-    codec.load(*in);
-    delete pre_codec;
-    delete in;
-    delete out;
+    // Enigma::DataOutput* out = new Enigma::DataOutput();
+    // pre_codec->save(*out);
+    // Enigma::DataInput* in = new Enigma::DataInput(out->GetStr());
+    // codec.load(*in);
+    // delete pre_codec;
+    // delete in;
+    // delete out;
 
     // codec.PrintCodes();
 
@@ -184,7 +184,10 @@ int read_binary_file(std::ifstream& stream, std::vector<std::string>& v) {
     while (stream) {
         stream.read(buf, 4);
         if (stream) {
-            size_t size = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
+            size_t size = static_cast<uint8_t>(buf[0])
+                        | static_cast<uint8_t>(buf[1] << 8)
+                        | static_cast<uint8_t>(buf[2] << 16)
+                        | static_cast<uint8_t>(buf[3] << 24);
             char* content = new char[size];
             stream.read(content, size);
             if (stream) {

@@ -23,14 +23,14 @@ void print_as_ints(const std::string& s) {
 void EnigmaCodec::GenerateCodes() {
     vector<size_t> nodes;
 
-    for (size_t i = 2; i < dict.Size(); i++) {
+    for (size_t i = 0; i < dict.Size(); i++) {
         nodes.push_back(i);
     }
 
     HuffmanTree tree;
 
     for (size_t i = 0; i < nodes.size(); i++) {
-        if (frequencies[nodes[i]] > 0 || dict.GetNode(nodes[i]).parent == 1) {
+        if (frequencies[nodes[i]] > 0 || dict.GetNode(nodes[i]).parent == dict.GetRoot()) {
             tree.PushValue(nodes[i], frequencies[nodes[i]]);
         }
     }
@@ -101,9 +101,14 @@ void EnigmaCodec::Learn(const vector<string>& vec) {
             }
         }
     }
+
+    size_t* im_freq = new size_t[Dictionary::MAX_SIZE + 2];
+    memset(im_freq, 0, sizeof(size_t) * (Dictionary::MAX_SIZE + 2));
+
     for (const string& str : vec) {
         size_t ptr = dict.GetRoot();
         for (char c : str) {
+            im_freq[ptr]++;
             int next = dict.NextNode(ptr, c);
             // std::cout << ptr << " <-" << c << "-> " << next << std::endl;
             // std::cout << "symbol is '" << c << "'";
@@ -113,6 +118,7 @@ void EnigmaCodec::Learn(const vector<string>& vec) {
             } else {
                 frequencies[ptr]++;
                 // std::cout << ", not in dict, finished string '" << GREEN(dict.RestoreString(ptr)) << "', go root" << std::endl;
+                im_freq[dict.GetRoot()]++;
                 ptr = dict.NextNode(dict.GetRoot(), c);
             }
         }
@@ -124,17 +130,27 @@ void EnigmaCodec::Learn(const vector<string>& vec) {
 
     frequencies[endSymbol] += vec.size();
 
+    size_t* new_freq = new size_t[Dictionary::MAX_SIZE + 2];
+
+    dict.Reorder(im_freq, new_freq, frequencies);
+
+    delete[] im_freq;
+    memcpy(frequencies, new_freq, sizeof(size_t) * Dictionary::MAX_SIZE + 2);
+    delete[] new_freq;
+
     GenerateCodes();
 }
 
 void EnigmaCodec::WriteCodeword(char*& encoded, Codeword* cw, size_t& bitOffset, uint8_t& bitContainer) {
-    bitContainer |= cw->packedBits[bitOffset][0];
+    uint8_t* packedBits = cw->packedBits[bitOffset];
+    size_t sz = cw->size[bitOffset];
+    bitContainer |= packedBits[0];
     if (cw->size[bitOffset] > 1) {
         *encoded = bitContainer;
         encoded++;
-        memcpy(encoded, cw->packedBits[bitOffset] + 1, cw->size[bitOffset] - 1);
+        memcpy(encoded, packedBits + 1, sz - 1);
         encoded += cw->size[bitOffset] - 2;
-        bitContainer = cw->packedBits[bitOffset][cw->size[bitOffset] - 1];
+        bitContainer = packedBits[sz - 1];
     }
     bitOffset = cw->lastBitsCount[bitOffset];
 }
@@ -148,7 +164,6 @@ size_t EnigmaCodec::encode(const string_view& raw, char* encoded) {
     for (size_t i = 0; i < raw.size(); i++) {
         unsigned char c = raw[i];
         int next = dict.NextNode(ptr, c);
-        // std::cout << (int)c << " ";
         if (dict.IsValid(next)) {
             ptr = next;
         } else {

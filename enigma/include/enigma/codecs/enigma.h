@@ -31,13 +31,12 @@ class ENIGMA_API EnigmaCodec : public CodecIFace {
 
         class cmp {
             size_t* frequencies;
-            size_t* lens;
 
             public:
-                cmp(size_t* frequencies, size_t* lens) : frequencies(frequencies), lens(lens) {}
+                cmp(size_t* frequencies) : frequencies(frequencies) {}
 
                 bool operator()(size_t a, size_t b) {
-                    return frequencies[a] * lens[a] > frequencies[b] * lens[b];
+                    return frequencies[a] > frequencies[b];
                 }
         };
 
@@ -59,20 +58,15 @@ class ENIGMA_API EnigmaCodec : public CodecIFace {
         void PrintCodes() {
             vector<size_t> nodes;
 
-            size_t* lens = new size_t[dict.Size()];
-
             for (size_t i = 2; i < dict.Size(); i++) {
                 nodes.push_back(i);
-                lens[i] = dict.GetNode(i).depth;
             }
 
-            cmp c(frequencies, lens);
+            cmp c(frequencies);
 
 
             sort(nodes.begin(), nodes.end(), c);
             reverse(nodes.begin(), nodes.end());
-
-            delete[] lens;
 
             size_t cnt = 0;
 
