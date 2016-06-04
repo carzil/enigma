@@ -45,7 +45,7 @@ class MemoryWatcher {
         void Start() {
             if (!is_running) {
                 is_running = true;
-                int result = pthread_create(&thread, NULL, MemoryWatcher::WatchMemory, (void*)this);
+                pthread_create(&thread, NULL, MemoryWatcher::WatchMemory, (void*)this);
             }
         }
 
