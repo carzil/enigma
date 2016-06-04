@@ -7,20 +7,20 @@
 
 TEST(DictionaryTest, AddTest) {
     Codecs::Dictionary dict;
-    int a = dict.AddNode(0, 'a');
-    int b = dict.AddNode(0, 'b');
-    int c = dict.AddNode(0, 'c');
-    ASSERT_EQ(dict.NextNode(0, 'a'), a);
-    ASSERT_EQ(dict.NextNode(0, 'b'), b);
-    ASSERT_EQ(dict.NextNode(0, 'c'), c);
+    int a = dict.AddNode(dict.GetRoot(), 'a');
+    int b = dict.AddNode(dict.GetRoot(), 'b');
+    int c = dict.AddNode(dict.GetRoot(), 'c');
+    ASSERT_EQ(dict.NextNode(dict.GetRoot(), 'a'), a);
+    ASSERT_EQ(dict.NextNode(dict.GetRoot(), 'b'), b);
+    ASSERT_EQ(dict.NextNode(dict.GetRoot(), 'c'), c);
 }
 
 TEST(DictionaryTest, AddChainTest) {
     Codecs::Dictionary dict;
-    int a = dict.AddNode(0, 'a');
+    int a = dict.AddNode(dict.GetRoot(), 'a');
     int b = dict.AddNode(a, 'b');
     int c = dict.AddNode(b, 'c');
-    ASSERT_EQ(dict.NextNode(0, 'a'), a);
+    ASSERT_EQ(dict.NextNode(dict.GetRoot(), 'a'), a);
     ASSERT_EQ(dict.NextNode(a, 'b'), b);
     ASSERT_EQ(dict.NextNode(b, 'c'), c);
 }
@@ -73,7 +73,7 @@ TEST(DictionaryTest, AddRandomStringsTest) {
     std::vector<std::string> v(5);
     for (size_t i = 0; i < v.size(); i++) {
         int ptr = dict.GetRoot();
-        for (size_t j = 0; j < 2; j++) {
+        for (size_t j = 0; j < 20; j++) {
             v[i].push_back('0' + rand() % 10);
             ptr = dict.AddNode(ptr, v[i][j]);
         }
@@ -88,6 +88,43 @@ TEST(DictionaryTest, AddRandomStringsTest) {
         ASSERT_EQ(s, v[i]);
     }
 }
+
+// TEST(DictionaryTest, LoadSaveSimpleTest) {
+//     Codecs::Dictionary dict;
+//     int a = dict.AddNode(dict.GetRoot(), 'a');
+//     int b = dict.AddNode(dict.GetRoot(), 'b');
+//     int c = dict.AddNode(dict.GetRoot(), 'c');
+//     std::string saved = dict.Save();
+//     Codecs::Dictionary dict2;
+//     dict2.Load(saved);
+//     ASSERT_EQ(dict2.NextNode(dict2.GetRoot(), 'a'), a);
+//     ASSERT_EQ(dict2.NextNode(dict2.GetRoot(), 'b'), b);
+//     ASSERT_EQ(dict2.NextNode(dict2.GetRoot(), 'c'), c);
+// }
+
+// TEST(DictionaryTest, LoadSaveRandomTest) {
+//     Codecs::Dictionary dict;
+//     std::vector<std::string> v(5);
+//     for (size_t i = 0; i < v.size(); i++) {
+//         int ptr = dict.GetRoot();
+//         for (size_t j = 0; j < 20; j++) {
+//             v[i].push_back('0' + rand() % 10);
+//             ptr = dict.AddNode(ptr, v[i][j]);
+//         }
+//     }
+//     std::string saved = dict.Save();
+//     Codecs::Dictionary dict2;
+//     dict2.Load(saved);
+//     for (size_t i = 0; i < v.size(); i++) {
+//         int ptr = dict2.GetRoot();
+//         for (size_t j = 0; j < v[i].size(); j++) {
+//             ptr = dict2.NextNode(ptr, v[i][j]);
+//             ASSERT_GT(ptr, 1);
+//         }
+//         std::string s = dict2.RestoreString(ptr);
+//         ASSERT_EQ(s, v[i]);
+//     }
+// }
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

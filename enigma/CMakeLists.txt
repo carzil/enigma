@@ -9,7 +9,6 @@ set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/uti
 
 add_subdirectory(common)
 add_subdirectory(codecs)
-add_subdirectory(huffman)
 
 add_library(enigma ${SOURCES})
 

@@ -1,4 +1,4 @@
-#include "enigma/huffman/prefix_table.h"
+#include "enigma/common/prefix_table.h"
 #include "enigma/utils.h"
 
 namespace Codecs {

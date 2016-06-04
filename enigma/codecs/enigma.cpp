@@ -13,18 +13,6 @@
 
 namespace Codecs {
 
-class cmp {
-    size_t* frequencies;
-    size_t* lens;
-
-    public:
-        cmp(size_t* frequencies, size_t* lens) : frequencies(frequencies), lens(lens) {}
-
-        bool operator()(size_t a, size_t b) {
-            return frequencies[a] * lens[a] > frequencies[b] * lens[b];
-        }
-};
-
 void print_as_ints(const std::string& s) {
     for (unsigned char c : s) {
         std::cout << (int)c << " ";
@@ -35,20 +23,10 @@ void print_as_ints(const std::string& s) {
 void EnigmaCodec::GenerateCodes() {
     vector<size_t> nodes;
 
-    size_t* lens = new size_t[dict.Size()];
-
     for (size_t i = 2; i < dict.Size(); i++) {
         nodes.push_back(i);
-        lens[i] = dict.GetNode(i).depth;
     }
 
-    cmp c(frequencies, lens);
-
-
-    sort(nodes.begin(), nodes.end(), c);
-    reverse(nodes.begin(), nodes.end());
-
-    delete[] lens;
     HuffmanTree tree;
 
     for (size_t i = 0; i < nodes.size(); i++) {
@@ -65,33 +43,7 @@ void EnigmaCodec::GenerateCodes() {
         prefix_table->AddCodeword(codes[p.first], p.first);
     }
 
-    size_t cnt = 0;
-
-    for (size_t i = 0; i < nodes.size(); i++) {
-        size_t ptr = nodes[i];
-        Codeword* cw = codes[ptr];
-        size_t matches = frequencies[ptr];
-        if (cw && matches > 0) {
-            std::string str = dict.RestoreString(ptr);
-            std::cout << "code for '" << GREEN(str) << "' (ptr = " << ptr << ") is " << RED(*cw);
-            size_t originSize = str.size() * 8;
-            size_t comprSize = cw->bitsCount[0];
-            std::cout << " (" << originSize << " bits -> " <<  comprSize << " bits, " << matches << " matches, ";
-            if (originSize < comprSize) {
-                std::cout << REDB("lost " << abs(originSize - comprSize) * matches / 8 << " bytes");
-            } else {
-                std::cout << GREENB("won " << abs(originSize - comprSize) * matches / 8 << " bytes");
-            }
-            std::cout << ")" << std::endl;
-            cnt++;
-        }
-    }
-    std::cout << "code for " << GREEN("endSymbol") << ": " << RED(*codes[endSymbol]) << std::endl;
-    cnt *= 4 + 1;
-    std::cout << "dictionary memory: " << cnt << " bytes (" << cnt / 1024 / 1024 << " MBytes)" << std::endl;
-    // cnt = 0;
-    // std::cout << "leaf nodes: " << cnt << std::endl;
-    // std::cout << "internal nodes: " << dict.Size() - cnt << std::endl; 
+    // PrintCodes();
 
 }
 
@@ -121,9 +73,6 @@ EnigmaCodec::~EnigmaCodec() {
 
     delete prefix_table;
 
-    std::cout << "valid: " << valid << std::endl;
-    std::cout << "invalid: " << invalid << std::endl;
-
     // for (size_t p : hist) {
     //     std::cout << p << " ";
     // }
@@ -132,12 +81,11 @@ EnigmaCodec::~EnigmaCodec() {
 
 void EnigmaCodec::Learn(const vector<string>& vec) {
     for (const string& str : vec) {
-        if (dict.IsFull()) {
-            break;
-        }
-
         int ptr = dict.GetRoot();
         for (size_t i = 0; i < str.size(); i++) {
+            if (dict.IsFull()) {
+                break;
+            }
             unsigned char c = str[i];
             int next = dict.NextNode(ptr, c);
             // std::cout << "symbol is '" << c << "'";
@@ -146,7 +94,7 @@ void EnigmaCodec::Learn(const vector<string>& vec) {
                 ptr = next;
             } else {
                 if (!dict.IsFull()) {
-                    int p = dict.AddNode(ptr, c);
+                    dict.AddNode(ptr, c);
                     // std::cout << ", not in dict, added string '" << GREEN(dict.RestoreString(p)) << "'" << std::endl;
                 }
                 ptr = dict.GetRoot();
@@ -175,13 +123,7 @@ void EnigmaCodec::Learn(const vector<string>& vec) {
     }
 
     frequencies[endSymbol] += vec.size();
-}
 
-void EnigmaCodec::Learn(const string& str) {
-
-}
-
-void EnigmaCodec::EndLearning() {
     GenerateCodes();
 }
 
@@ -201,7 +143,7 @@ size_t EnigmaCodec::encode(const string_view& raw, char* encoded) {
     uint8_t bitContainer = 0;
     size_t bitOffset = 0;
     const char* start = encoded;
-    size_t ptr = dict.GetRoot();
+    int ptr = dict.GetRoot();
 
     for (size_t i = 0; i < raw.size(); i++) {
         unsigned char c = raw[i];
@@ -289,11 +231,26 @@ size_t EnigmaCodec::decode(const string_view& raw, char* result) {
     return result - start;
 }
 
-string EnigmaCodec::save() const {
-    return string();
+void EnigmaCodec::save(DataOutput& out) const {
+    std::string result;
+
+    dict.Save(out);
+    for (size_t i = 0; i < Dictionary::MAX_SIZE + 2; i++) {
+        out.WriteInt(frequencies[i]);
+        // std::cout << frequencies[i] << " ";
+    }
+    // std::cout << std::endl;
+
 }
 
-void EnigmaCodec::load(const string_view&) {
+void EnigmaCodec::load(DataInput& in) {
+    dict.Load(in);
+    for (size_t i = 0; i < Dictionary::MAX_SIZE + 2; i++) {
+        frequencies[i] = in.ReadInt();
+        // std::cout << frequencies[i] << " ";
+    }
+    // std::cout << std::endl;
+    GenerateCodes();
 }
 
 size_t EnigmaCodec::sample_size(size_t total) const {

@@ -5,8 +5,13 @@
 #include <vector>
 #include <cstring>
 #include <algorithm>
+#include <iostream>
+#include <experimental/string_view>
 
 #include "enigma_export.h"
+#include "enigma/utils.h"
+
+using std::experimental::string_view;
 
 namespace Codecs {
 
@@ -22,7 +27,7 @@ class ENIGMA_NO_EXPORT Dictionary {
             int parent;
             size_t depth;
 
-            Node() : parent(1), depth(0), ch(0), table(nullptr) {}
+            Node() : ch(0), table(nullptr), parent(1), depth(0) {}
             ~Node() {
                 if (table) {
                     delete[] table;
@@ -78,6 +83,7 @@ class ENIGMA_NO_EXPORT Dictionary {
         }
 
         const Dictionary::Node& GetNode(int ptr) const;
+
         std::string RestoreString(int ptr) const {
             std::string s;
             while (nodes[ptr].parent != 1) {
@@ -87,6 +93,31 @@ class ENIGMA_NO_EXPORT Dictionary {
             s.push_back(nodes[ptr].ch);
             std::reverse(s.begin(), s.end());
             return s;
+        }
+
+        void Save(DataOutput& out) const {
+            out.WriteInt(Size());
+            // std::cout << "size = " << Size() << std::endl;
+            for (size_t i = 2; i < Size(); i++) {
+                out.WriteChar(nodes[i].ch);
+                out.WriteInt(nodes[i].parent);
+                // std::cout << "saved " << i << " " << nodes[i].ch << " " << std::endl;
+            }
+        }
+
+        void Load(DataInput& in) {
+            delete[] nodes;
+            nodes = new Node[Dictionary::MAX_SIZE + 2];
+
+            next_free = 2;
+            size_t size = in.ReadInt();
+            // std::cout << "size = " << size << std::endl;
+            for (size_t i = 2; i < size; i++) {
+                uint8_t ch = in.ReadChar();
+                int parent = in.ReadInt();
+                AddNode(parent, ch);
+                // std::cout << "added " << parent << " " << ch << std::endl;
+            }
         }
 
     private:

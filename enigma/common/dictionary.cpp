@@ -10,7 +10,9 @@ Dictionary::Dictionary() {
 }
 
 Dictionary::~Dictionary() {
-    delete[] nodes;
+    if (nodes) {
+        delete[] nodes;
+    }
 }
 
 const Dictionary::Node& Dictionary::GetNode(int ptr) const {

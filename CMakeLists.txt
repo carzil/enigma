@@ -2,17 +2,31 @@ cmake_minimum_required(VERSION 3.0)
 project(enigma)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(enigma_build_tests "Build tests for enigma" OFF)
+option(ENIGMA_BUILD_TESTS "Build tests for enigma" OFF)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Ofast -g -fsanitize=address -fno-omit-frame-pointer")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Ofast -march=native")
+set(ENIGMA_SANITIZER "" CACHE STRING "")
 
-if (CMAKE_BUILD_TYPE MATCHES DEBUG)
+function(add_flag flag)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}" PARENT_SCOPE)
+endfunction()
+
+add_flag("-std=c++14")
+add_flag("-Wall -Wextra")
+
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    add_flag("-Ofast")
+    add_flag("-fno-omit-frame-pointer")
+    add_flag("-g")
+    if (ENIGMA_SANITIZER) 
+        add_flag("-fsanitize=${ENIGMA_SANITIZER}")
+    endif()
+
     add_definitions(-DDEBUG)
+else()
+    add_flag("-Ofast -march=native")
 endif()
 
-if (enigma_build_tests)
+if (ENIGMA_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
     # because Enigma have some private API, hidden in shared library,

@@ -10,6 +10,7 @@
 #include <functional>
 
 #include "enigma_export.h"
+#include "enigma/utils.h"
 
 namespace Codecs {
 
@@ -54,15 +55,12 @@ public:
     virtual size_t encode(const string_view&, char*) = 0;
     virtual size_t decode(const string_view&, char*) = 0;
 
-    virtual string save() const = 0;
-    virtual void load(const string_view&) = 0;
+    virtual void save(DataOutput&) const = 0;
+    virtual void load(DataInput&) = 0;
 
     virtual size_t sample_size(size_t records_total) const = 0;
     
     virtual void Learn(const std::vector<std::string>&) = 0;
-    virtual void Learn(const std::string&) = 0;
-    virtual void EndLearning() = 0;
-
 
     virtual void reset() = 0;
 

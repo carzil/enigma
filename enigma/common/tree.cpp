@@ -3,7 +3,7 @@
 #include <queue>
 #include <vector>
 
-#include "enigma/huffman/tree.h"
+#include "enigma/common/tree.h"
 #include "enigma/colors.h"
 
 namespace Codecs {
