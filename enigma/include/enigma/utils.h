@@ -3,7 +3,7 @@
 
 using std::experimental::string_view;
 
-namespace Codecs {
+namespace Enigma {
 
 void print_char_bits(char c);
 

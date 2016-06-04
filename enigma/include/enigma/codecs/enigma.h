@@ -13,7 +13,7 @@
 #include "enigma_export.h"
 #include "enigma/colors.h"
 
-namespace Codecs {
+namespace Enigma {
 
 class ENIGMA_API EnigmaCodec : public CodecIFace {
     private:

@@ -13,7 +13,7 @@
 
 using std::experimental::string_view;
 
-namespace Codecs {
+namespace Enigma {
 
 
 class ENIGMA_NO_EXPORT Dictionary {

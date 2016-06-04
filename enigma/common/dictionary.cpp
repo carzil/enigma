@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <iostream>
 
-namespace Codecs {
+namespace Enigma {
 
 Dictionary::Dictionary() {
     nodes = new Node[MAX_SIZE + 2];

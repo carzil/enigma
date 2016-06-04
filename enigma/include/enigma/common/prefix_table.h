@@ -4,7 +4,7 @@
 #include "enigma/common/codeword.h"
 #include "enigma_export.h"
 
-namespace Codecs {
+namespace Enigma {
 
 class ENIGMA_NO_EXPORT PrefixTable {
     private:

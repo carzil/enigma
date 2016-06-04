@@ -1,7 +1,7 @@
 #include <iostream>
 #include "enigma/utils.h"
 
-namespace Codecs {
+namespace Enigma {
 
 void print_char_bits(char c) {
     int bitPos = 7;

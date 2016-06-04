@@ -1,7 +1,7 @@
 #include "enigma/common/prefix_table.h"
 #include "enigma/utils.h"
 
-namespace Codecs {
+namespace Enigma {
 
 PrefixTable::PrefixTable() {
     for (size_t i = 0; i < 256; i++) {

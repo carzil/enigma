@@ -12,7 +12,7 @@
 #include "enigma_export.h"
 #include "enigma/utils.h"
 
-namespace Codecs {
+namespace Enigma {
 
 using std::string;
 using std::experimental::string_view;

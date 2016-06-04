@@ -11,7 +11,7 @@
 #include "enigma/utils.h"
 
 
-namespace Codecs {
+namespace Enigma {
 
 void print_as_ints(const std::string& s) {
     for (unsigned char c : s) {

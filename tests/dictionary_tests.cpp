@@ -6,7 +6,7 @@
 #include "enigma/common/dictionary.h"
 
 TEST(DictionaryTest, AddTest) {
-    Codecs::Dictionary dict;
+    Enigma::Dictionary dict;
     int a = dict.AddNode(dict.GetRoot(), 'a');
     int b = dict.AddNode(dict.GetRoot(), 'b');
     int c = dict.AddNode(dict.GetRoot(), 'c');
@@ -16,7 +16,7 @@ TEST(DictionaryTest, AddTest) {
 }
 
 TEST(DictionaryTest, AddChainTest) {
-    Codecs::Dictionary dict;
+    Enigma::Dictionary dict;
     int a = dict.AddNode(dict.GetRoot(), 'a');
     int b = dict.AddNode(a, 'b');
     int c = dict.AddNode(b, 'c');
@@ -26,7 +26,7 @@ TEST(DictionaryTest, AddChainTest) {
 }
 
 TEST(DictionaryTest, AddRandomStringTest) {
-    Codecs::Dictionary dict;
+    Enigma::Dictionary dict;
     std::string str;
     for (size_t i = 0; i < 100; i++) {
         str.push_back(rand() % 256);
@@ -43,7 +43,7 @@ TEST(DictionaryTest, AddRandomStringTest) {
 }
 
 TEST(Dictionary, AddSameString) {
-    Codecs::Dictionary dict;
+    Enigma::Dictionary dict;
     std::vector<std::string> v = { "abcd", "abcd", "abcd", "abcd", "abcd" };
     for (size_t i = 0; i < v.size(); i++) {
         int ptr = dict.GetRoot();
@@ -55,7 +55,7 @@ TEST(Dictionary, AddSameString) {
 }
 
 TEST(DictionaryTest, RestoreStringTest) {
-    Codecs::Dictionary dict;
+    Enigma::Dictionary dict;
     std::string str;
     for (size_t i = 0; i < 100; i++) {
         str.push_back(rand() % 256);
@@ -69,7 +69,7 @@ TEST(DictionaryTest, RestoreStringTest) {
 }
 
 TEST(DictionaryTest, AddRandomStringsTest) {
-    Codecs::Dictionary dict;
+    Enigma::Dictionary dict;
     std::vector<std::string> v(5);
     for (size_t i = 0; i < v.size(); i++) {
         int ptr = dict.GetRoot();
@@ -90,12 +90,12 @@ TEST(DictionaryTest, AddRandomStringsTest) {
 }
 
 // TEST(DictionaryTest, LoadSaveSimpleTest) {
-//     Codecs::Dictionary dict;
+//     Enigma::Dictionary dict;
 //     int a = dict.AddNode(dict.GetRoot(), 'a');
 //     int b = dict.AddNode(dict.GetRoot(), 'b');
 //     int c = dict.AddNode(dict.GetRoot(), 'c');
 //     std::string saved = dict.Save();
-//     Codecs::Dictionary dict2;
+//     Enigma::Dictionary dict2;
 //     dict2.Load(saved);
 //     ASSERT_EQ(dict2.NextNode(dict2.GetRoot(), 'a'), a);
 //     ASSERT_EQ(dict2.NextNode(dict2.GetRoot(), 'b'), b);
@@ -103,7 +103,7 @@ TEST(DictionaryTest, AddRandomStringsTest) {
 // }
 
 // TEST(DictionaryTest, LoadSaveRandomTest) {
-//     Codecs::Dictionary dict;
+//     Enigma::Dictionary dict;
 //     std::vector<std::string> v(5);
 //     for (size_t i = 0; i < v.size(); i++) {
 //         int ptr = dict.GetRoot();
@@ -113,7 +113,7 @@ TEST(DictionaryTest, AddRandomStringsTest) {
 //         }
 //     }
 //     std::string saved = dict.Save();
-//     Codecs::Dictionary dict2;
+//     Enigma::Dictionary dict2;
 //     dict2.Load(saved);
 //     for (size_t i = 0; i < v.size(); i++) {
 //         int ptr = dict2.GetRoot();

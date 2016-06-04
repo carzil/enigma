@@ -83,16 +83,16 @@ void print_usage() {
 }
 
 void test_from_file(std::vector<std::string>& records) {
-    Codecs::EnigmaCodec* pre_codec = new Codecs::EnigmaCodec();
-    Codecs::EnigmaCodec codec;
+    Enigma::EnigmaCodec* pre_codec = new Enigma::EnigmaCodec();
+    Enigma::EnigmaCodec codec;
     Stopwatch sw;
 
     sw.Start();
     pre_codec->Learn(records);
     sw.Stop();
-    Codecs::DataOutput* out = new Codecs::DataOutput();
+    Enigma::DataOutput* out = new Enigma::DataOutput();
     pre_codec->save(*out);
-    Codecs::DataInput* in = new Codecs::DataInput(out->GetStr());
+    Enigma::DataInput* in = new Enigma::DataInput(out->GetStr());
     codec.load(*in);
     delete pre_codec;
     delete in;

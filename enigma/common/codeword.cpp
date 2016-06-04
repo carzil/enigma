@@ -2,7 +2,7 @@
 
 #include "enigma/common/codeword.h"
 
-namespace Codecs {
+namespace Enigma {
 
 Codeword::Codeword() {}
 

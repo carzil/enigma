@@ -6,7 +6,7 @@
 #include "enigma/common/tree.h"
 #include "enigma/colors.h"
 
-namespace Codecs {
+namespace Enigma {
 
 HuffmanTree::Node::Node() : left(nullptr), right(nullptr), c(0), frequency(0) {}
 HuffmanTree::Node::Node(HuffmanTree::Node* left, HuffmanTree::Node* right, size_t frequency) : left(left), right(right), c(0), frequency(frequency) {}
